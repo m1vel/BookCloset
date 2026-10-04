@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  X, Play, Heart, FolderOpen, Export, Trash, PencilSimple, CheckCircle, ArrowCounterClockwise,
+  X, Play, Heart, FolderOpen, Export, Trash, PencilSimple, CheckCircle, ArrowCounterClockwise, GlobeHemisphereWest,
 } from '@phosphor-icons/react'
 import { useLibrary } from '../store/library'
 import { useUi } from '../store/ui'
@@ -13,6 +13,7 @@ import { IconButton } from '../components/ui'
 import { openBookById, openAuthor, openSeries } from './open'
 import { seriesBooks, nextInSeries } from '../library/series'
 import { sanitizeHtml } from '../formats/sanitize'
+import { OnlineMetaDialog } from './OnlineMetaDialog'
 
 export function BookDetails({ bookId }: { bookId: string }) {
   const t = useT()
@@ -26,13 +27,14 @@ export function BookDetails({ bookId }: { bookId: string }) {
   const [authors, setAuthors] = useState('')
   const [series, setSeries] = useState('')
   const [seriesIndex, setSeriesIndex] = useState('')
+  const [online, setOnline] = useState(false)
   const allBooks = useLibrary(s => s.books)
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !editing) close() }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !editing && !online) close() }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [editing])
+  }, [editing, online])
 
   if (!book) return null
   const lib = useLibrary.getState()
@@ -104,7 +106,10 @@ export function BookDetails({ bookId }: { bookId: string }) {
                   <span key={a + i}>{i > 0 && ', '}<button className="link-inline" onClick={() => { close(); openAuthor(a) }}>{a}</button></span>
                 )) : t('lib.unknownAuthor')}
               </div>
-              <button className="btn ghost sm details-edit-btn" onClick={startEdit}><PencilSimple size={14} /> {t('book.edit')}</button>
+              <div className="details-title-actions">
+                <button className="btn ghost sm details-edit-btn" onClick={startEdit}><PencilSimple size={14} /> {t('book.edit')}</button>
+                <button className="btn ghost sm details-edit-btn" onClick={() => setOnline(true)}><GlobeHemisphereWest size={14} /> {t('online.find')}</button>
+              </div>
             </div>
           )}
           <div className="details-actions">
@@ -183,6 +188,7 @@ export function BookDetails({ bookId }: { bookId: string }) {
           </div>
         </div>
       </aside>
+      {online && <OnlineMetaDialog book={book} onClose={() => setOnline(false)} />}
     </div>
   )
 }

@@ -55,13 +55,14 @@ export const Cover = memo(function Cover({ book, className = '', style }: {
   book: BookRecord; className?: string; style?: CSSProperties
 }) {
   const version = useLibrary(s => s.coverVersion[book.id])
-  const [failed, setFailed] = useState(false)
-  const showImage = book.hasCover && !failed
+  // remember which cover version failed so a newly saved cover gets another chance
+  const [failed, setFailed] = useState<number | undefined | null>(null)
+  const showImage = book.hasCover && failed !== version
   return (
     <div className={`cover ${className}`} style={style}>
       {showImage
         ? <img src={coverUrl(book.id, version)} alt="" loading="lazy" decoding="async" draggable={false}
-            onError={() => setFailed(true)} />
+            onError={() => setFailed(version)} />
         : <GeneratedCover book={book} />}
       <span className="cover-spine" aria-hidden="true" />
     </div>

@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   Annotation, ArchiveListing, BookRecord, Collection, ImportResult, KeyStatus, LibraryData, ReadingSession,
-  Settings, StatsData, TranslateRequest, TranslateResponse, TranslationProviderId,
+  MetaCandidate, MetaQuery, Settings, StatsData, TranslateRequest, TranslateResponse, TranslationProviderId,
 } from '../shared/types'
 
 const invoke = <T>(channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args) as Promise<T>
@@ -49,6 +49,11 @@ const api = {
     run: (req: TranslateRequest) => invoke<TranslateResponse>('translate:run', req),
     keyStatus: () => invoke<KeyStatus>('translate:key-status'),
     setKey: (provider: TranslationProviderId, key: string) => invoke<KeyStatus>('translate:set-key', provider, key),
+  },
+  meta: {
+    search: (q: MetaQuery) => invoke<MetaCandidate[]>('meta:search', q),
+    details: (key: string) => invoke<{ description?: string; subjects?: string[] }>('meta:details', key),
+    image: (url: string) => invoke<Uint8Array | null>('meta:image', url),
   },
   annotations: {
     get: (id: string) => invoke<Annotation[]>('annotations:get', id),

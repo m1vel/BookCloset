@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, nativeTheme, screen, shell, Menu }
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { writeFile, copyFile } from 'node:fs/promises'
-import type { Annotation, BookRecord, Collection, ReadingSession, Settings, TranslateRequest, TranslationProviderId } from '../shared/types'
+import type { Annotation, BookRecord, Collection, MetaQuery, ReadingSession, Settings, TranslateRequest, TranslationProviderId } from '../shared/types'
 import { SUPPORTED_EXTENSIONS, extOf } from '../shared/formats'
 import { mergeSettings } from '../shared/defaults'
 import { setupDataDir, dataDir } from './paths'
@@ -16,6 +16,7 @@ import { extractArchive, cacheFile, readCached } from './archive'
 import { extractDocText, findCalibre, convertWithCalibre } from './converters'
 import { translate } from './translate'
 import { setKey, keyStatus } from './secrets'
+import { searchMetadata, metadataDetails, fetchImage } from './metasearch'
 
 setupDataDir()
 registerSchemes()
@@ -205,6 +206,10 @@ function registerIpc() {
   ipcMain.handle('translate:run', (_e, req: TranslateRequest) => translate(req))
   ipcMain.handle('translate:key-status', () => keyStatus())
   ipcMain.handle('translate:set-key', (_e, provider: TranslationProviderId, key: string) => { setKey(provider, key); return keyStatus() })
+
+  ipcMain.handle('meta:search', (_e, q: MetaQuery) => searchMetadata(q))
+  ipcMain.handle('meta:details', (_e, key: string) => metadataDetails(key))
+  ipcMain.handle('meta:image', (_e, url: string) => fetchImage(url))
 
   ipcMain.handle('file:save-text', async (_e, defaultName: string, content: string) => {
     const r = await dialog.showSaveDialog(win!, { defaultPath: defaultName })

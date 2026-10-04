@@ -219,6 +219,31 @@ export type TranslateResponse =
 
 export type KeyStatus = Partial<Record<TranslationProviderId, { set: boolean; hint: string }>>
 
+export interface MetaQuery {
+  title: string
+  author?: string
+  isbn?: string
+  /** ISO 639-1 language of the book, to prefer editions in that language */
+  lang?: string
+}
+
+/** A book found in an online catalog (Open Library / Google Books). */
+export interface MetaCandidate {
+  id: string
+  source: 'Open Library' | 'Google Books'
+  title: string
+  authors: string[]
+  year?: string
+  publisher?: string
+  pages?: number
+  description?: string
+  language?: string
+  coverUrl?: string
+  thumbUrl?: string
+  /** Open Library work key for fetching the description */
+  detailsKey?: string
+}
+
 export interface ImportResult {
   added: BookRecord[]
   duplicates: BookRecord[]
