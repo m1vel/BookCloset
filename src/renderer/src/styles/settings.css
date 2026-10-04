@@ -89,7 +89,10 @@
 [data-theme='paper'] .ng-title { font-size: 28px; }
 .ng-author { margin: 2px 0 12px; font-size: 13px; }
 .ng-list { display: grid; gap: 6px; }
-.ng-quote { display: grid; gap: 6px; padding: 10px 12px; border-radius: var(--r-md); text-align: left; transition: background-color var(--dur-1); }
+.ng-item { position: relative; }
+.ng-card { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity var(--dur-1); background: var(--surface); box-shadow: var(--shadow-1); }
+.ng-item:hover .ng-card, .ng-card:focus-visible { opacity: 1; }
+.ng-quote { width: 100%; display: grid; gap: 6px; padding: 10px 12px; border-radius: var(--r-md); text-align: left; transition: background-color var(--dur-1); }
 .ng-quote:hover { background: var(--surface-hover); }
 .ng-quote blockquote {
   margin: 0;

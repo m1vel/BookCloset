@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, screen, shell, Menu } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, nativeTheme, screen, shell, Menu } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { writeFile, copyFile } from 'node:fs/promises'
@@ -215,6 +215,23 @@ function registerIpc() {
     const r = await dialog.showSaveDialog(win!, { defaultPath: defaultName })
     if (r.canceled || !r.filePath) return false
     await writeFile(r.filePath, content, 'utf8')
+    return true
+  })
+  ipcMain.handle('file:save-png', async (_e, defaultName: string, bytes: Uint8Array) => {
+    const r = await dialog.showSaveDialog(win!, {
+      defaultPath: join(app.getPath('pictures'), defaultName),
+      filters: [{ name: 'PNG', extensions: ['png'] }],
+    })
+    if (r.canceled || !r.filePath) return false
+    await writeFile(r.filePath, Buffer.from(bytes))
+    return true
+  })
+  ipcMain.handle('clipboard:image', (_e, bytes: Uint8Array) => {
+    const img = nativeImage.createFromBuffer(Buffer.from(bytes))
+    if (img.isEmpty()) return false
+    // automated tests must not overwrite the user's clipboard
+    if (testMode) { (globalThis as any).__bcTestClipboard = img.getSize(); return true }
+    clipboard.writeImage(img)
     return true
   })
 

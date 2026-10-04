@@ -422,6 +422,11 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
             setSelection(null)
           }}
           onTranslate={trSettings.enabled ? () => openTranslation(selection) : undefined}
+          onQuoteCard={() => {
+            useUi.getState().showQuoteCard({ bookId, text: selection.text, chapter: selection.chapter ?? relocRef.current?.chapter })
+            ctrl.current?.clearSelection()
+            setSelection(null)
+          }}
         />
       )}
       {annMenu && annotation && (
@@ -431,6 +436,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
           onStyle={s => saveAnnotations(annotations.map(a => (a.id === annotation.id ? { ...a, style: s, updatedAt: Date.now() } : a)))}
           onNote={() => { setNoteEdit({ rect: annMenu.rect, quote: annotation.text, initial: annotation.note, id: annotation.id }); setAnnMenu(null) }}
           onCopy={() => { copy(annotation.text ?? ''); setAnnMenu(null) }}
+          onQuoteCard={() => { useUi.getState().showQuoteCard({ bookId, text: annotation.text ?? '', chapter: annotation.chapter }); setAnnMenu(null) }}
           onDelete={() => { saveAnnotations(annotations.filter(a => a.id !== annotation.id)); setAnnMenu(null) }}
         />
       )}
