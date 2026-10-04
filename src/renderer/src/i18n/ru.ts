@@ -321,6 +321,29 @@ export const ru = {
   'online.bulkProgress': 'Ищем обложки: {done} из {total}',
   'online.bulkDone': 'Найдено обложек: {found} из {total}',
   'online.allHaveCovers': 'У всех книг уже есть обложки',
+
+  // quote cards
+  'quote.make': 'Карточка цитаты',
+  'quote.title': 'Карточка цитаты',
+  'quote.preview': 'Предпросмотр карточки',
+  'quote.style': 'Стиль',
+  'quote.style.paper': 'Бумага',
+  'quote.style.night': 'Ночь',
+  'quote.style.cover': 'Обложка',
+  'quote.format': 'Формат',
+  'quote.format.square': '1:1',
+  'quote.format.story': 'Сторис',
+  'quote.format.wide': '16:9',
+  'quote.font': 'Шрифт',
+  'quote.text': 'Текст',
+  'quote.truncated': 'Цитата не помещается и будет сокращена. Уберите лишнее или выберите формат «Сторис».',
+  'quote.showCover': 'Обложка книги',
+  'quote.showBrand': 'Подпись BookCloset',
+  'quote.copy': 'Копировать',
+  'quote.save': 'Сохранить PNG',
+  'quote.copied': 'Карточка скопирована — вставьте её в чат или пост',
+  'quote.saved': 'Карточка сохранена',
+  'quote.fileSuffix': 'цитата',
 }
 
 export type Dict = typeof ru

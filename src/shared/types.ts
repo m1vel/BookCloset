@@ -150,8 +150,17 @@ export interface Settings {
   goals: { dailyMinutes: number }
   translation: TranslationSettings
   schedule: ThemeSchedule
+  quoteCard: QuoteCardPrefs
   calibrePath?: string
   windowBounds?: { x: number; y: number; width: number; height: number; maximized: boolean }
+}
+
+export interface QuoteCardPrefs {
+  style: 'paper' | 'night' | 'cover'
+  format: 'square' | 'story' | 'wide'
+  font: 'cormorant' | 'literata' | 'manrope'
+  showCover: boolean
+  showBrand: boolean
 }
 
 export interface ThemeSchedule {

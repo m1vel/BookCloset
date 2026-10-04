@@ -69,6 +69,8 @@ const api = {
     fullscreen: (on?: boolean) => invoke<boolean>('win:fullscreen', on),
   },
   saveText: (name: string, content: string) => invoke<boolean>('file:save-text', name, content),
+  savePng: (name: string, bytes: Uint8Array) => invoke<boolean>('file:save-png', name, bytes),
+  copyImage: (bytes: Uint8Array) => invoke<boolean>('clipboard:image', bytes),
   openExternal: (url: string) => invoke<void>('shell:open', url),
   openDataDir: () => invoke<void>('shell:open-data'),
 }

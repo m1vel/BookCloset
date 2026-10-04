@@ -7,6 +7,7 @@ import { DialogHost, Toasts, TooltipLayer } from './components/ui'
 import { Sidebar } from './views/Sidebar'
 import { LibraryView } from './views/LibraryView'
 import { BookDetails } from './views/BookDetails'
+import { QuoteCardHost } from './quotes/QuoteCardDialog'
 import { DropZone } from './views/DropZone'
 import { openBookById } from './views/open'
 import { useAppearance } from './store/appearance'
@@ -94,6 +95,7 @@ export default function App() {
         </div>
       )}
       <DropZone />
+      <QuoteCardHost />
       <DialogHost />
       <Toasts />
       <TooltipLayer />

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { MagnifyingGlass, Quotes, X, Export } from '@phosphor-icons/react'
+import { MagnifyingGlass, Quotes, X, Export, ImageSquare } from '@phosphor-icons/react'
 import type { Annotation } from '../../../shared/types'
 import { bc } from '../api'
 import { useLibrary } from '../store/library'
@@ -9,6 +9,7 @@ import { HIGHLIGHT_COLORS } from '../engines/types'
 import { Cover } from '../components/Cover'
 import { IconButton } from '../components/ui'
 import { openBookById } from './open'
+import { useUi } from '../store/ui'
 
 /** All highlights & notes across the library, grouped by book. */
 export default function NotesView() {
@@ -76,11 +77,19 @@ export default function NotesView() {
                 <div className="muted ng-author">{book!.authors.join(', ')}</div>
                 <div className="ng-list">
                   {list.map(a => (
-                    <button key={a.id} className="ng-quote" onClick={() => openBookById(book!.id, a.cfi ?? a.page)}>
-                      <blockquote style={{ '--hl': HIGHLIGHT_COLORS[a.color ?? 'yellow'] } as React.CSSProperties}>{a.text}</blockquote>
-                      {a.note && <p className="ng-note">{a.note}</p>}
-                      <span className="faint ng-meta">{a.chapter ? `${a.chapter} · ` : ''}{formatDate(a.createdAt, lang)}</span>
-                    </button>
+                    <div key={a.id} className="ng-item">
+                      <button className="ng-quote" onClick={() => openBookById(book!.id, a.cfi ?? a.page)}>
+                        <blockquote style={{ '--hl': HIGHLIGHT_COLORS[a.color ?? 'yellow'] } as React.CSSProperties}>{a.text}</blockquote>
+                        {a.note && <p className="ng-note">{a.note}</p>}
+                        <span className="faint ng-meta">{a.chapter ? `${a.chapter} · ` : ''}{formatDate(a.createdAt, lang)}</span>
+                      </button>
+                      {a.text && (
+                        <IconButton size="sm" className="ng-card" label={t('quote.make')}
+                          onClick={() => useUi.getState().showQuoteCard({ bookId: book!.id, text: a.text!, chapter: a.chapter })}>
+                          <ImageSquare size={16} />
+                        </IconButton>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

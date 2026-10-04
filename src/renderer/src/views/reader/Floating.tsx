@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Copy, NotePencil, MagnifyingGlass, Translate, Trash, TextUnderline, Highlighter } from '@phosphor-icons/react'
+import { Copy, NotePencil, MagnifyingGlass, Translate, Trash, TextUnderline, Highlighter, Quotes } from '@phosphor-icons/react'
 import type { HighlightColor } from '../../../../shared/types'
 import { HIGHLIGHT_COLORS } from '../../engines/types'
 import { useT } from '../../i18n'
@@ -39,13 +39,14 @@ function Floater({ rect, children, className = '', onClose, gap = 10 }: {
 
 const COLORS = Object.keys(HIGHLIGHT_COLORS) as HighlightColor[]
 
-export function SelectionMenu({ rect, onHighlight, onNote, onCopy, onSearch, onTranslate }: {
+export function SelectionMenu({ rect, onHighlight, onNote, onCopy, onSearch, onTranslate, onQuoteCard }: {
   rect: DOMRect
   onHighlight: (c: HighlightColor) => void
   onNote: () => void
   onCopy: () => void
   onSearch: () => void
   onTranslate?: () => void
+  onQuoteCard: () => void
 }) {
   const t = useT()
   return (
@@ -60,6 +61,7 @@ export function SelectionMenu({ rect, onHighlight, onNote, onCopy, onSearch, onT
       <button className="sel-btn" onPointerDown={e => e.preventDefault()} onClick={onNote}><NotePencil size={16} /> {t('reader.note')}</button>
       <button className="sel-btn icon" data-tip={t('reader.copy')} aria-label={t('reader.copy')} onPointerDown={e => e.preventDefault()} onClick={onCopy}><Copy size={16} /></button>
       <button className="sel-btn icon" data-tip={t('reader.searchSel')} aria-label={t('reader.searchSel')} onPointerDown={e => e.preventDefault()} onClick={onSearch}><MagnifyingGlass size={16} /></button>
+      <button className="sel-btn icon" data-tip={t('quote.make')} aria-label={t('quote.make')} onPointerDown={e => e.preventDefault()} onClick={onQuoteCard}><Quotes size={16} /></button>
       {onTranslate && (
         <button className="sel-btn" onPointerDown={e => e.preventDefault()} onClick={onTranslate}><Translate size={16} /> {t('reader.translate')}</button>
       )}
@@ -67,7 +69,7 @@ export function SelectionMenu({ rect, onHighlight, onNote, onCopy, onSearch, onT
   )
 }
 
-export function AnnotationMenu({ rect, color, style, onColor, onStyle, onNote, onCopy, onDelete, onClose }: {
+export function AnnotationMenu({ rect, color, style, onColor, onStyle, onNote, onCopy, onQuoteCard, onDelete, onClose }: {
   rect: DOMRect
   color?: HighlightColor
   style?: string
@@ -75,6 +77,7 @@ export function AnnotationMenu({ rect, color, style, onColor, onStyle, onNote, o
   onStyle: (s: 'highlight' | 'underline') => void
   onNote: () => void
   onCopy: () => void
+  onQuoteCard: () => void
   onDelete: () => void
   onClose: () => void
 }) {
@@ -91,6 +94,7 @@ export function AnnotationMenu({ rect, color, style, onColor, onStyle, onNote, o
       <button className={`sel-btn icon ${style === 'underline' ? 'on' : ''}`} aria-label="underline" onClick={() => onStyle('underline')}><TextUnderline size={16} /></button>
       <button className="sel-btn" onClick={onNote}><NotePencil size={16} /> {t('reader.note')}</button>
       <button className="sel-btn icon" aria-label={t('reader.copy')} data-tip={t('reader.copy')} onClick={onCopy}><Copy size={16} /></button>
+      <button className="sel-btn icon" aria-label={t('quote.make')} data-tip={t('quote.make')} onClick={onQuoteCard}><Quotes size={16} /></button>
       <button className="sel-btn icon danger" aria-label={t('reader.removeHighlight')} data-tip={t('reader.removeHighlight')} onClick={onDelete}><Trash size={16} /></button>
     </Floater>
   )

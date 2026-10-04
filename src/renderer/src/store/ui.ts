@@ -31,6 +31,12 @@ export interface ConfirmRequest {
   resolve: (ok: boolean) => void
 }
 
+export interface QuoteCardRequest {
+  bookId: string
+  text: string
+  chapter?: string
+}
+
 export interface PromptRequest {
   title: string
   label: string
@@ -46,6 +52,7 @@ interface UiState {
   confirmReq: ConfirmRequest | null
   promptReq: PromptRequest | null
   detailsBookId: string | null
+  quoteCard: QuoteCardRequest | null
   fullscreen: boolean
   navigate: (r: Route) => void
   toast: (t: Omit<Toast, 'id'>, id?: number) => number
@@ -53,6 +60,7 @@ interface UiState {
   confirm: (r: Omit<ConfirmRequest, 'resolve'>) => Promise<boolean>
   prompt: (r: Omit<PromptRequest, 'resolve'>) => Promise<string | null>
   showDetails: (id: string | null) => void
+  showQuoteCard: (r: QuoteCardRequest | null) => void
 }
 
 let toastSeq = 1
@@ -65,6 +73,7 @@ export const useUi = create<UiState>((set, get) => ({
   confirmReq: null,
   promptReq: null,
   detailsBookId: null,
+  quoteCard: null,
   fullscreen: false,
   navigate: r => set(s => ({
     route: r,
@@ -91,4 +100,5 @@ export const useUi = create<UiState>((set, get) => ({
     promptReq: { ...r, resolve: v => { set({ promptReq: null }); resolve(v) } },
   })),
   showDetails: id => set({ detailsBookId: id }),
+  showQuoteCard: r => set({ quoteCard: r }),
 }))

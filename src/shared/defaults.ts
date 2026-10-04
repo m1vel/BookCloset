@@ -48,6 +48,7 @@ export function defaultSettings(lang: 'ru' | 'en' = 'ru'): Settings {
       group: 'none',
     },
     goals: { dailyMinutes: 30 },
+    quoteCard: { style: 'paper', format: 'square', font: 'cormorant', showCover: true, showBrand: true },
     schedule: {
       mode: 'off',
       dayTheme: 'paper',
