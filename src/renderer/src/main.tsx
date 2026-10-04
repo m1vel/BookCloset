@@ -10,6 +10,7 @@ import './styles/pages.css'
 import './styles/stats.css'
 import './styles/settings.css'
 import './styles/quotes.css'
+import './styles/vocab.css'
 import App from './App'
 
 createRoot(document.getElementById('root')!).render(<App />)

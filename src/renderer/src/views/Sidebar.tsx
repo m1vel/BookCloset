@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Books, BookOpenText, BookmarkSimple, CheckCircle, Heart, Quotes, ChartLineUp, GearSix, Plus,
-  FolderSimple, DotsThree, PencilSimple, Trash,
+  FolderSimple, DotsThree, PencilSimple, Trash, Cards,
 } from '@phosphor-icons/react'
+import { useVocab } from '../store/vocab'
 import { useLibrary } from '../store/library'
 import { useUi, type LibraryFilter, type Route } from '../store/ui'
 import { useT } from '../i18n'
@@ -17,6 +18,8 @@ export function Sidebar() {
   const route = useUi(s => s.route)
   const navigate = useUi(s => s.navigate)
   const [menu, setMenu] = useState<{ id: string; el: HTMLElement } | null>(null)
+  const dueWords = useVocab(s => s.entries.filter(e => e.srs.due <= s.now).length)
+  useEffect(() => { useVocab.getState().load() }, [])
 
   const n = useMemo(() => ({
     all: books.length,
@@ -31,13 +34,13 @@ export function Sidebar() {
     && JSON.stringify(route.filter ?? { kind: 'all' }) === JSON.stringify(f)
   const go = (f: LibraryFilter) => navigate({ name: 'library', filter: f })
 
-  const Item = ({ icon, label, count, active, onClick }: {
-    icon: React.ReactNode; label: string; count?: number; active: boolean; onClick: () => void
+  const Item = ({ icon, label, count, badge, active, onClick }: {
+    icon: React.ReactNode; label: string; count?: number; badge?: string; active: boolean; onClick: () => void
   }) => (
     <button className={`nav-item ${active ? 'active' : ''}`} onClick={onClick} aria-current={active ? 'page' : undefined}>
       <span className="nav-icon">{icon}</span>
       <span className="nav-label truncate">{label}</span>
-      {!!count && <span className="nav-count tabular">{count}</span>}
+      {!!count && <span className="nav-count tabular" title={badge}>{count}</span>}
     </button>
   )
 
@@ -65,6 +68,7 @@ export function Sidebar() {
         <Item icon={<CheckCircle size={19} />} label={t('nav.finished')} count={n.finished} active={isActive({ kind: 'finished' })} onClick={() => go({ kind: 'finished' })} />
         <Item icon={<Heart size={19} />} label={t('nav.favorites')} count={n.favorites} active={isActive({ kind: 'favorites' })} onClick={() => go({ kind: 'favorites' })} />
         <Item icon={<Quotes size={19} />} label={t('nav.notes')} count={n.notes} active={routeIs('notes')} onClick={() => navigate({ name: 'notes' })} />
+        <Item icon={<Cards size={19} />} label={t('nav.vocab')} count={dueWords} badge={t('vocab.dueNow')} active={routeIs('vocab')} onClick={() => navigate({ name: 'vocab' })} />
 
         <div className="nav-section">
           <span className="eyebrow">{t('nav.collections')}</span>

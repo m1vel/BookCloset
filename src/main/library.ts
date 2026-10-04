@@ -3,7 +3,7 @@ import { createReadStream } from 'node:fs'
 import { copyFile, open, readFile, rm, stat, writeFile, unlink, readdir } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import type {
-  Annotation, BookRecord, Collection, ImportResult, LibraryData, ReadingSession, StatsData,
+  Annotation, BookRecord, Collection, ImportResult, LibraryData, ReadingSession, StatsData, VocabData, VocabEntry,
 } from '../shared/types'
 import { detectFormat, extOf, SUPPORTED_EXTENSIONS } from '../shared/formats'
 import { JsonStore } from './json-store'
@@ -11,17 +11,24 @@ import { annotationsDir, booksDir, cacheDir, coversDir, dataDir } from './paths'
 
 let library: JsonStore<LibraryData>
 let stats: JsonStore<StatsData>
+let vocab: JsonStore<VocabData>
 
 export function initLibrary() {
   library = new JsonStore<LibraryData>(join(dataDir(), 'library.json'),
     () => ({ version: 1, books: [], collections: [] }))
   stats = new JsonStore<StatsData>(join(dataDir(), 'stats.json'),
     () => ({ version: 1, sessions: [] }))
+  vocab = new JsonStore<VocabData>(join(dataDir(), 'vocab.json'),
+    () => ({ version: 1, entries: [] }))
 }
+
+export const getVocab = () => vocab.get().entries
+export const setVocab = (entries: VocabEntry[]) => vocab.set({ version: 1, entries })
 
 export function flushAll() {
   library?.flush()
   stats?.flush()
+  vocab?.flush()
 }
 
 export const getLibrary = () => library.get()

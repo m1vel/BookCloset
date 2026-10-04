@@ -272,6 +272,40 @@ export interface MetaCandidate {
   detailsKey?: string
 }
 
+/** Spaced-repetition state (SM-2 family). `interval` is in days. */
+export interface VocabSrs {
+  due: number
+  interval: number
+  ease: number
+  reps: number
+  lapses: number
+  last?: number
+}
+
+export interface VocabEntry {
+  id: string
+  term: string
+  translation: string
+  /** dictionary senses, e.g. "noun: tired, weary" */
+  meanings?: string
+  /** source language (ISO 639-1) */
+  lang: string
+  target: string
+  /** the sentence the word was found in */
+  context?: string
+  bookId?: string
+  bookTitle?: string
+  cfi?: string
+  page?: number
+  createdAt: number
+  srs: VocabSrs
+}
+
+export interface VocabData {
+  version: 1
+  entries: VocabEntry[]
+}
+
 export interface ImportResult {
   added: BookRecord[]
   duplicates: BookRecord[]
