@@ -687,3 +687,29 @@ foliate-view::part(head) { font-family: var(--font-display); font-size: 13px; fo
 .tts-voices .menu-item .truncate { flex: 1; min-width: 0; text-align: left; }
 .tts-hint { padding: 6px 10px 10px; display: grid; gap: 8px; }
 .tts-hint p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+
+
+/* ---------- bilingual ---------- */
+.ap-select { height: 32px; width: auto; min-width: 150px; padding: 0 10px; font-size: 13px; }
+.bi-status {
+  position: absolute;
+  z-index: 24;
+  left: 22px;
+  bottom: 54px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: color-mix(in srgb, var(--page-bg) 85%, transparent);
+  border: 1px solid var(--line-2);
+  backdrop-filter: blur(12px);
+  animation: fade-in var(--dur-2) var(--ease-out) both;
+}
+.bi-status svg { color: var(--page-accent, var(--accent)); }
+.bi-status i { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--page-accent, var(--accent)); transition: width .3s ease-out; }
+.reader.chrome-off .bi-status { bottom: 14px; }

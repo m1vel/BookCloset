@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
-  Annotation, ArchiveListing, BookRecord, Collection, ImportResult, KeyStatus, LibraryData, ReadingSession,
+  Annotation, ArchiveListing, BatchTranslateRequest, BatchTranslateResponse, BookRecord, Collection, ImportResult, KeyStatus, LibraryData, ReadingSession,
   MetaCandidate, MetaQuery, Settings, StatsData, TranslateRequest, VocabEntry, TranslateResponse, TranslationProviderId,
 } from '../shared/types'
 
@@ -47,6 +47,7 @@ const api = {
   calibre: { find: () => invoke<string | null>('calibre:find') },
   translate: {
     run: (req: TranslateRequest) => invoke<TranslateResponse>('translate:run', req),
+    batch: (req: BatchTranslateRequest) => invoke<BatchTranslateResponse>('translate:batch', req),
     keyStatus: () => invoke<KeyStatus>('translate:key-status'),
     setKey: (provider: TranslationProviderId, key: string) => invoke<KeyStatus>('translate:set-key', provider, key),
   },

@@ -422,6 +422,15 @@ export const ru = {
   'vocab.backToList': 'К словарю',
   'vocab.add': 'В словарь',
   'vocab.inVocab': 'В словаре',
+
+  // bilingual
+  'bi.title': 'Двуязычный режим',
+  'bi.hint': 'Перевод под каждым абзацем (B)',
+  'bi.lang': 'Переводить на',
+  'bi.on': 'Двуязычный режим: перевод на {lang}',
+  'bi.off': 'Двуязычный режим выключен',
+  'bi.progress': 'Перевод главы {done}/{total}',
+  'bi.failed': 'Не удалось перевести главу',
 }
 
 export type Dict = typeof ru

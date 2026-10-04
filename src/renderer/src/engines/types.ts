@@ -43,6 +43,8 @@ export interface EngineEvents {
   onKey: (e: KeyboardEvent) => void
   onActivity: () => void
   onFootnote?: (html: string, rect: DOMRect) => void
+  /** bilingual mode: translation progress of the current section */
+  onBilingual?: (p: { done: number; total: number; error?: { code: string; message: string } }) => void
   onError: (e: unknown) => void
 }
 

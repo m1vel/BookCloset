@@ -27,7 +27,7 @@ export default async ({ page, shot, wait }) => {
   await page.evaluate(() => window.__bc.settings.getState().update(s => {
     s.lang = 'ru'; s.uiTheme = 'paper'
     Object.assign(s.reader, { pageTheme: 'auto', flow: 'paginated', columns: 2, fontFamily: 'Literata' })
-    Object.assign(s.translation, { enabled: true, provider: 'free', targetLang: 'ru', autoWord: false })
+    Object.assign(s.translation, { enabled: true, provider: 'free', targetLang: 'ru', autoWord: false, bilingual: false })
   }))
 
   // ---- English phrase from Alice

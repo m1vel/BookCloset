@@ -414,4 +414,13 @@ export const en: Dict = {
   'vocab.backToList': 'Back to vocabulary',
   'vocab.add': 'Add to vocabulary',
   'vocab.inVocab': 'In vocabulary',
+
+  // bilingual
+  'bi.title': 'Bilingual mode',
+  'bi.hint': 'A translation under every paragraph (B)',
+  'bi.lang': 'Translate into',
+  'bi.on': 'Bilingual mode: translating into {lang}',
+  'bi.off': 'Bilingual mode off',
+  'bi.progress': 'Translating chapter {done}/{total}',
+  'bi.failed': 'Could not translate the chapter',
 }

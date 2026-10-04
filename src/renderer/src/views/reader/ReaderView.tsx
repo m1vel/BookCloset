@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ListBullets, MagnifyingGlass, Quotes, BookmarkSimple, TextAa, CornersOut, CornersIn, CaretLeft, CaretRight,
-  WarningCircle, PlayCircle, PauseCircle, Eyeglasses, SpeakerHigh,
+  WarningCircle, PlayCircle, PauseCircle, Eyeglasses, SpeakerHigh, Translate as TranslateIcon,
 } from '@phosphor-icons/react'
 import type { Annotation, HighlightColor } from '../../../../shared/types'
 import { useLibrary } from '../../store/library'
 import { useSettings } from '../../store/settings'
 import { useUi } from '../../store/ui'
-import { useT, formatDuration } from '../../i18n'
+import { useT, formatDuration, type TKey } from '../../i18n'
 import { bc } from '../../api'
 import type { BookSource, TocItem } from '../../formats/types'
 import type { EngineController, EngineEvents, Relocation, SelectionInfo } from '../../engines/types'
@@ -23,6 +23,7 @@ import { nextInSeries } from '../../library/series'
 import { ReflowEngine } from '../../engines/reflow/ReflowEngine'
 import { PagedEngine } from '../../engines/paged/PagedEngine'
 import { openBookById } from '../open'
+import { langName } from '../../translation'
 import { useAutoRead, AutoReadBar, FocusRuler, stepValue, SPEED_STEPS, PAGE_STEPS } from './AutoRead'
 import { useReadAloud, ReadAloudBar } from './ReadAloud'
 
@@ -63,6 +64,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
   const translationRef = useRef<SelectionInfo | null>(null)
   translationRef.current = translation
   const trSettings = useSettings(s => s.settings.translation)
+  const [biProgress, setBiProgress] = useState<{ done: number; total: number } | null>(null)
   const [search, setSearch] = useState<SearchState>({ query: '', hits: [], progress: 0, running: false })
   const [searchNonce, setSearchNonce] = useState(0)
   const [scrub, setScrub] = useState<number | null>(null)
@@ -205,6 +207,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
     // layout-independent letters (Russian keyboard)
     if (e.code === 'KeyS' && !e.shiftKey) { e.preventDefault(); toggleAuto(); return }
     if (e.code === 'KeyR' && !e.shiftKey) { e.preventDefault(); toggleReadAloud(); return }
+    if (e.code === 'KeyB' && !e.shiftKey && source?.kind === 'reflow') { e.preventDefault(); toggleBilingual(); return }
     const reading = raRef.current
     if (reading && reading.status !== 'idle' && k === ' ') { e.preventDefault(); reading.toggle(); return }
     if (e.code === 'KeyF' && !e.shiftKey) { e.preventDefault(); toggleFocus(); return }
@@ -311,6 +314,15 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
     onKey: e => onKeyRef.current(e),
     onActivity: () => session.activity(),
     onFootnote: (html, rect) => setFootnote({ html, rect }),
+    onBilingual: p => {
+      setBiProgress(p.total && p.done < p.total && !p.error ? { done: p.done, total: p.total } : null)
+      if (p.error) {
+        useUi.getState().toast({
+          kind: 'error', text: t('bi.failed'), sub: t(`tr.err.${p.error.code}` as TKey),
+          action: { label: t('nav.settings'), run: () => navigate({ name: 'settings' }) },
+        })
+      }
+    },
     onError: e => setError(String((e as any)?.message ?? e)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [source, reader.flow, paged.mode, footnote, isRtl, trSettings.enabled, trSettings.autoWord])
@@ -341,6 +353,17 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
       : { kind: 'info', text: t('tts.ended') }),
   })
   raRef.current = ra
+  function toggleBilingual() {
+    const on = !useSettings.getState().settings.translation.bilingual
+    useSettings.getState().update(s => { s.translation.bilingual = on })
+    useUi.getState().toast({ kind: 'info', text: on ? t('bi.on', { lang: langName(trSettings.bilingualLang, lang) }) : t('bi.off') })
+  }
+  const bilingualOpts = useMemo(() => (trSettings.bilingual ? {
+    to: trSettings.bilingualLang,
+    provider: trSettings.provider,
+    model: trSettings.provider === 'claude' ? trSettings.claudeModel : trSettings.provider === 'openai' ? trSettings.openaiModel : undefined,
+    folderId: trSettings.provider === 'yandex' ? trSettings.yandexFolderId || undefined : undefined,
+  } : null), [trSettings.bilingual, trSettings.bilingualLang, trSettings.provider, trSettings.claudeModel, trSettings.openaiModel, trSettings.yandexFolderId])
   function toggleReadAloud() {
     if (ra.status === 'idle') { setAuto(false); ra.start() } else ra.stop()
   }
@@ -457,7 +480,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
         {source?.kind === 'reflow' && (
           <ReflowEngine ref={ctrl} book={source.book} meta={{ ...source.meta, title: book.title }} prefs={reader}
             theme={theme} accent={accent} initialLocation={typeof book.location === 'string' ? book.location : null}
-            initialFraction={book.progress} annotations={annotations} events={events} />
+            initialFraction={book.progress} annotations={annotations} events={events} bilingual={bilingualOpts} />
         )}
         {source?.kind === 'paged' && (
           <PagedEngine ref={ctrl} doc={source.doc} prefs={{ ...paged, rtl: paged.rtl || !!(source.doc as any).rtl }} theme={theme}
@@ -489,6 +512,12 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
       </div>
 
       {ra.status !== 'idle' && source && <ReadAloudBar ra={ra} />}
+      {biProgress && (
+        <div className="bi-status" role="status">
+          <TranslateIcon size={14} /> {t('bi.progress', { done: biProgress.done, total: biProgress.total })}
+          <i style={{ width: `${(biProgress.done / biProgress.total) * 100}%` }} />
+        </div>
+      )}
       {auto && source && (
         <AutoReadBar continuous={continuous} prefs={autoPrefs} paused={autoPaused} manualPause={autoHold} progressRef={autoProgress}
           focus={focusMode} onToggle={() => setAutoHold(h => !h)} onSpeed={changeSpeed}

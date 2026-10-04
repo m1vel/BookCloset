@@ -63,6 +63,8 @@ export function defaultSettings(lang: 'ru' | 'en' = 'ru'): Settings {
     },
     translation: {
       enabled: true,
+      bilingual: false,
+      bilingualLang: lang,
       provider: 'free',
       targetLang: lang,
       claudeModel: 'claude-opus-5-5',
