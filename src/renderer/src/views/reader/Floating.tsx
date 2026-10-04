@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Copy, NotePencil, MagnifyingGlass, Translate, Trash, TextUnderline, Highlighter, Quotes, SpeakerHigh } from '@phosphor-icons/react'
+import { Copy, NotePencil, MagnifyingGlass, Translate, Trash, TextUnderline, Highlighter, Quotes, SpeakerHigh, Sparkle, UserFocus } from '@phosphor-icons/react'
 import type { HighlightColor } from '../../../../shared/types'
 import { HIGHLIGHT_COLORS } from '../../engines/types'
 import { useT } from '../../i18n'
@@ -39,7 +39,7 @@ function Floater({ rect, children, className = '', onClose, gap = 10 }: {
 
 const COLORS = Object.keys(HIGHLIGHT_COLORS) as HighlightColor[]
 
-export function SelectionMenu({ rect, onHighlight, onNote, onCopy, onSearch, onTranslate, onQuoteCard, onReadFrom }: {
+export function SelectionMenu({ rect, text, onHighlight, onNote, onCopy, onSearch, onTranslate, onQuoteCard, onReadFrom, onAsk }: {
   rect: DOMRect
   onHighlight: (c: HighlightColor) => void
   onNote: () => void
@@ -48,7 +48,11 @@ export function SelectionMenu({ rect, onHighlight, onNote, onCopy, onSearch, onT
   onTranslate?: () => void
   onQuoteCard: () => void
   onReadFrom: () => void
+  /** AI assistant: explain the passage, or "who is this" for a short name-like selection */
+  onAsk?: (task: 'explain' | 'who') => void
+  text?: string
 }) {
+  const nameLike = !!text && text.trim().split(/\s+/).length <= 4 && text.trim().length <= 40
   const t = useT()
   return (
     <Floater rect={rect} className="sel-menu">
@@ -64,6 +68,13 @@ export function SelectionMenu({ rect, onHighlight, onNote, onCopy, onSearch, onT
       <button className="sel-btn icon" data-tip={t('reader.searchSel')} aria-label={t('reader.searchSel')} onPointerDown={e => e.preventDefault()} onClick={onSearch}><MagnifyingGlass size={16} /></button>
       <button className="sel-btn icon" data-tip={t('quote.make')} aria-label={t('quote.make')} onPointerDown={e => e.preventDefault()} onClick={onQuoteCard}><Quotes size={16} /></button>
       <button className="sel-btn icon" data-tip={t('tts.readFrom')} aria-label={t('tts.readFrom')} onPointerDown={e => e.preventDefault()} onClick={onReadFrom}><SpeakerHigh size={16} /></button>
+      {onAsk && (
+        <>
+          <span className="sel-sep" />
+          <button className="sel-btn icon" data-tip={t('ai.explain')} aria-label={t('ai.explain')} onPointerDown={e => e.preventDefault()} onClick={() => onAsk('explain')}><Sparkle size={16} /></button>
+          {nameLike && <button className="sel-btn icon" data-tip={t('ai.who')} aria-label={t('ai.who')} onPointerDown={e => e.preventDefault()} onClick={() => onAsk('who')}><UserFocus size={16} /></button>}
+        </>
+      )}
       {onTranslate && (
         <button className="sel-btn" onPointerDown={e => e.preventDefault()} onClick={onTranslate}><Translate size={16} /> {t('reader.translate')}</button>
       )}

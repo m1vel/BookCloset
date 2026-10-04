@@ -251,6 +251,30 @@ export type TranslateResponse =
 
 export type KeyStatus = Partial<Record<TranslationProviderId, { set: boolean; hint: string }>>
 
+export type AssistantTask = 'explain' | 'recap' | 'who' | 'ask'
+
+export interface AssistantRequest {
+  id: string
+  task: AssistantTask
+  /** answer language (ISO 639-1) */
+  lang: string
+  book: { title: string; authors: string[] }
+  /** book text up to the end of the current page (spoiler boundary) */
+  readSoFar: string
+  /** the beginning of the book was cut to fit the context budget */
+  trimmed: boolean
+  /** selected passage (explain) or name (who) */
+  selection?: string
+  question?: string
+  history?: { role: 'user' | 'assistant'; text: string }[]
+  provider?: 'claude' | 'openai'
+  model?: string
+}
+
+export type AssistantResponse =
+  | { ok: true; text: string; model?: string; tokens?: { input: number; cached: number; output: number } }
+  | { ok: false; code: TranslateErrorCode; message: string }
+
 export interface BatchTranslateRequest {
   texts: string[]
   to: string
