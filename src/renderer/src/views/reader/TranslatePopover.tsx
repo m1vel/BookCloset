@@ -2,7 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   ArrowRight, Copy, NotePencil, SpeakerHigh, X, WarningCircle, ArrowClockwise, GearSix, Translate as TranslateIcon, Info,
+  Cards, Check,
 } from '@phosphor-icons/react'
+import { useVocab, sentenceAround } from '../../store/vocab'
 import type { TranslateResponse, TranslationProviderId, KeyStatus } from '../../../../shared/types'
 import { useSettings } from '../../store/settings'
 import { useT, type TKey } from '../../i18n'
@@ -27,9 +29,11 @@ interface Props {
   onSave: (translation: string) => void
   onClose: () => void
   onOpenSettings: () => void
+  /** where the word came from, for the vocabulary */
+  origin?: { bookId: string; bookTitle: string; cfi?: string; page?: number }
 }
 
-export function TranslatePopover({ rect, text, context, title, target, onTarget, onSave, onClose, onOpenSettings }: Props) {
+export function TranslatePopover({ rect, text, context, title, target, onTarget, onSave, onClose, onOpenSettings, origin }: Props) {
   const t = useT()
   const ui = useSettings(s => s.settings.lang)
   const settings = useSettings(s => s.settings.translation)
@@ -75,6 +79,19 @@ export function TranslatePopover({ rect, text, context, title, target, onTarget,
   const source = result?.detected?.toLowerCase().split('-')[0] || detectedLocal
   const short = text.length <= 60 && !/[.!?…]\s/.test(text)
   const info = PROVIDERS.find(p => p.id === (result?.provider ?? provider))!
+  const fromLang = result?.detected ?? detectedLocal ?? 'en'
+  const saved = useVocab(s => (result ? s.find(text, fromLang) : undefined))
+  const addToVocab = () => {
+    if (!result || saved) return
+    const term = text.trim()
+    useVocab.getState().add({
+      term, translation: result.text, lang: fromLang, target: to,
+      meanings: result.meanings?.slice(0, 3).map(m => `${m.pos}: ${m.terms.slice(0, 4).join(', ')}`).join('; ') || undefined,
+      context: sentenceAround(context, term, fromLang),
+      bookId: origin?.bookId, bookTitle: origin?.bookTitle, cfi: origin?.cfi, page: origin?.page,
+    })
+  }
+  const vocabSized = text.trim().length <= 60
   const available = PROVIDERS.filter(p => !p.needsKey || keys[p.id]?.set)
 
   const speak = () => {
@@ -156,8 +173,13 @@ export function TranslatePopover({ rect, text, context, title, target, onTarget,
       <footer className="tr-foot">
         {result ? (
           <>
-            <button className="btn sm ghost" onClick={() => { navigator.clipboard.writeText(result.text) }}><Copy size={14} /> {t('reader.copy')}</button>
+            <button className="icon-btn sm" aria-label={t('reader.copy')} data-tip={t('reader.copy')} onClick={() => { navigator.clipboard.writeText(result.text) }}><Copy size={15} /></button>
             <button className="btn sm ghost" onClick={() => onSave(result.text)}><NotePencil size={14} /> {t('tr.saveNote')}</button>
+            {vocabSized && (
+              <button className={`btn sm ${saved ? 'ghost tr-saved' : ''}`} onClick={addToVocab} disabled={!!saved} aria-pressed={!!saved}>
+                {saved ? <Check size={14} weight="bold" /> : <Cards size={14} />} {saved ? t('vocab.inVocab') : t('vocab.add')}
+              </button>
+            )}
             <span className="tr-spacer" />
             <span className="tr-by"><TranslateIcon size={12} /> {result.fallback ? 'MyMemory' : info.name}</span>
           </>

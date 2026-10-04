@@ -6,6 +6,7 @@ export type Route =
   | { name: 'stats' }
   | { name: 'settings' }
   | { name: 'notes' }
+  | { name: 'vocab' }
 
 export type LibraryFilter =
   | { kind: 'all' } | { kind: 'reading' } | { kind: 'unread' } | { kind: 'finished' }

@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   Annotation, ArchiveListing, BookRecord, Collection, ImportResult, KeyStatus, LibraryData, ReadingSession,
-  MetaCandidate, MetaQuery, Settings, StatsData, TranslateRequest, TranslateResponse, TranslationProviderId,
+  MetaCandidate, MetaQuery, Settings, StatsData, TranslateRequest, VocabEntry, TranslateResponse, TranslationProviderId,
 } from '../shared/types'
 
 const invoke = <T>(channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args) as Promise<T>
@@ -54,6 +54,10 @@ const api = {
     search: (q: MetaQuery) => invoke<MetaCandidate[]>('meta:search', q),
     details: (key: string) => invoke<{ description?: string; subjects?: string[] }>('meta:details', key),
     image: (url: string) => invoke<Uint8Array | null>('meta:image', url),
+  },
+  vocab: {
+    get: () => invoke<VocabEntry[]>('vocab:get'),
+    set: (entries: VocabEntry[]) => invoke<void>('vocab:set', entries),
   },
   annotations: {
     get: (id: string) => invoke<Annotation[]>('annotations:get', id),

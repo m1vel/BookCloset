@@ -577,6 +577,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
           onTarget={setTrTarget}
           onClose={() => setTranslation(null)}
           onOpenSettings={() => { setTranslation(null); navigate({ name: 'settings' }) }}
+          origin={{ bookId, bookTitle: book.title, cfi: translation.cfi, page: translation.page }}
           onSave={text => {
             addHighlight('blue', text, translation)
             setTranslation(null)

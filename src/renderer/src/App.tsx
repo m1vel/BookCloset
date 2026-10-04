@@ -7,6 +7,7 @@ import { DialogHost, Toasts, TooltipLayer } from './components/ui'
 import { Sidebar } from './views/Sidebar'
 import { LibraryView } from './views/LibraryView'
 import { BookDetails } from './views/BookDetails'
+import { useVocab, ankiExport } from './store/vocab'
 import { QuoteCardHost } from './quotes/QuoteCardDialog'
 import { DropZone } from './views/DropZone'
 import { openBookById } from './views/open'
@@ -16,6 +17,7 @@ const ReaderView = lazy(() => import('./views/ReaderView'))
 const StatsView = lazy(() => import('./views/StatsView'))
 const SettingsView = lazy(() => import('./views/SettingsView'))
 const NotesView = lazy(() => import('./views/NotesView'))
+const VocabView = lazy(() => import('./views/VocabView'))
 
 function useThemeSync() {
   const uiTheme = useAppearance().ui
@@ -89,6 +91,7 @@ export default function App() {
               {route.name === 'stats' && <StatsView />}
               {route.name === 'settings' && <SettingsView />}
               {route.name === 'notes' && <NotesView />}
+              {route.name === 'vocab' && <VocabView />}
             </Suspense>
           </main>
           {detailsId && <BookDetails bookId={detailsId} />}
@@ -104,7 +107,7 @@ export default function App() {
 }
 
 // handle for automated UI tests (tests/run.mjs)
-;(window as any).__bc = { lib: useLibrary, ui: useUi, settings: useSettings, openBookById }
+;(window as any).__bc = { lib: useLibrary, ui: useUi, settings: useSettings, vocab: useVocab, vocabExport: ankiExport, openBookById }
 
 async function openFiles(paths: string[]) {
   const records = await useLibrary.getState().importPaths(paths)

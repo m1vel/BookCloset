@@ -2,7 +2,7 @@ import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, nativeThem
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { writeFile, copyFile } from 'node:fs/promises'
-import type { Annotation, BookRecord, Collection, MetaQuery, ReadingSession, Settings, TranslateRequest, TranslationProviderId } from '../shared/types'
+import type { Annotation, BookRecord, Collection, MetaQuery, ReadingSession, VocabEntry, Settings, TranslateRequest, TranslationProviderId } from '../shared/types'
 import { SUPPORTED_EXTENSIONS, extOf } from '../shared/formats'
 import { mergeSettings } from '../shared/defaults'
 import { setupDataDir, dataDir } from './paths'
@@ -10,6 +10,7 @@ import { JsonStore } from './json-store'
 import {
   initLibrary, flushAll, getLibrary, importFiles, updateBook, removeBooks, setCollections, saveCover,
   readBook, getAnnotations, setAnnotations, getStats, addSession, getBook, bookFilePath, allAnnotationCounts,
+  getVocab, setVocab,
 } from './library'
 import { registerSchemes, handleProtocols, CSP } from './protocol'
 import { extractArchive, cacheFile, readCached } from './archive'
@@ -179,6 +180,8 @@ function registerIpc() {
 
   ipcMain.handle('stats:get', () => getStats())
   ipcMain.handle('stats:add', (_e, s: ReadingSession) => addSession(s))
+  ipcMain.handle('vocab:get', () => getVocab())
+  ipcMain.handle('vocab:set', (_e, entries: VocabEntry[]) => setVocab(entries))
 
   ipcMain.handle('archive:extract', (_e, id: string) => {
     const b = getBook(id)
