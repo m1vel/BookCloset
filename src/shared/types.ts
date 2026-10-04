@@ -151,8 +151,20 @@ export interface Settings {
   translation: TranslationSettings
   schedule: ThemeSchedule
   quoteCard: QuoteCardPrefs
+  autoRead: AutoReadPrefs
   calibrePath?: string
   windowBounds?: { x: number; y: number; width: number; height: number; maximized: boolean }
+}
+
+export interface AutoReadPrefs {
+  /** continuous layouts: px per second */
+  speed: number
+  /** paginated layouts: seconds per page */
+  pageSeconds: number
+  /** focus mode: show the reading ruler */
+  ruler: boolean
+  /** ruler height in lines */
+  rulerLines: number
 }
 
 export interface QuoteCardPrefs {

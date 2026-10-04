@@ -10,6 +10,43 @@ import { useAppearance, setPageTheme } from '../../store/appearance'
 
 const THEMES: PageTheme[] = ['auto', 'white', 'paper', 'sepia', 'gray', 'night', 'oled']
 
+/** Autoscroll speed / page time and the focus ruler; shared by both appearance popovers. */
+function AutoReadSection({ continuous }: { continuous: boolean }) {
+  const t = useT()
+  const a = useSettings(s => s.settings.autoRead)
+  const update = useSettings(s => s.update)
+  return (
+    <section className="ap-sliders ap-auto">
+      <div className="ap-label eyebrow">{t('auto.settings')}</div>
+      {continuous ? (
+        <>
+          <div className="ap-row">
+            <span className="ap-label">{t('auto.speedLabel')}</span>
+            <span className="ap-value tabular">{t('auto.speed', { n: a.speed })}</span>
+          </div>
+          <Slider label={t('auto.speedLabel')} min={10} max={250} step={5} value={a.speed} onChange={v => update(s => { s.autoRead.speed = v })} />
+        </>
+      ) : (
+        <>
+          <div className="ap-row">
+            <span className="ap-label">{t('auto.pageLabel')}</span>
+            <span className="ap-value tabular">{t('auto.perPage', { n: a.pageSeconds })}</span>
+          </div>
+          <Slider label={t('auto.pageLabel')} min={5} max={180} step={5} value={a.pageSeconds} onChange={v => update(s => { s.autoRead.pageSeconds = v })} />
+        </>
+      )}
+      <Toggle label={t('focus.ruler')} checked={a.ruler} onChange={v => update(s => { s.autoRead.ruler = v })} />
+      {a.ruler && (
+        <div className="ap-row">
+          <span className="ap-label">{t('focus.rulerLines')}</span>
+          <Segmented value={a.rulerLines} onChange={v => update(s => { s.autoRead.rulerLines = v })}
+            options={[1, 2, 3, 4].map(n => ({ value: n, label: String(n) }))} />
+        </div>
+      )}
+    </section>
+  )
+}
+
 function PageThemePicker() {
   const t = useT()
   const { page: pageTheme, ui } = useAppearance()
@@ -101,6 +138,7 @@ export function ReflowAppearance() {
         <Toggle label={t('type.override')} checked={r.overrideBookStyles} onChange={v => setReader({ overrideBookStyles: v })} />
         <Toggle label={t('type.animation')} checked={r.animated} onChange={v => setReader({ animated: v })} />
       </section>
+      <AutoReadSection continuous={r.flow === 'scrolled'} />
       <button className="btn ghost sm ap-reset" onClick={() => {
         const d = defaultSettings().reader
         setReader({ ...d, pageTheme: r.pageTheme })
@@ -145,6 +183,7 @@ export function PagedAppearance({ prefs: p, setPrefs: setPaged }: { prefs: Paged
         <Toggle label={t('paged.coverAlone')} checked={p.coverAlone} onChange={v => setPaged({ coverAlone: v })} />
         <Toggle label={t('paged.invert')} checked={p.invertInDark} onChange={v => setPaged({ invertInDark: v })} />
       </section>
+      <AutoReadSection continuous={p.mode === 'scroll'} />
     </div>
   )
 }

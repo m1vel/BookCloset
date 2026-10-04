@@ -801,6 +801,14 @@ export class Paginator extends HTMLElement {
         element[scrollProp] = Math.max(min, Math.min(max,
             element[scrollProp] + delta))
     }
+    // BookCloset: unbounded scrolling for autoscroll in scrolled mode; false when nothing moved
+    scrollFree(delta) {
+        const element = this.#container
+        const { scrollProp } = this
+        const before = element[scrollProp]
+        element[scrollProp] = before + (this.#rtl && !this.scrolled ? -delta : delta)
+        return element[scrollProp] !== before
+    }
     snap(vx, vy) {
         const velocity = this.#vertical ? vy : vx
         const [offset, a, b] = this.#scrollBounds

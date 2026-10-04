@@ -60,6 +60,11 @@ export interface EngineController {
   bookmarkLocation(): { cfi?: string; page?: number; text?: string } | null
   isBookmarked(list: Annotation[]): Annotation | null
   focus(): void
+  /**
+   * Continuous layouts (scrolled flow, PDF scroll mode): scroll by `px`.
+   * 'edge' when the current section/document cannot scroll further, null for paginated layouts.
+   */
+  scrollStep(px: number): 'moved' | 'edge' | null
 }
 
 export const HIGHLIGHT_COLORS: Record<HighlightColor, string> = {
