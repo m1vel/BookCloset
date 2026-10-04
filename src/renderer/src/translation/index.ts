@@ -65,13 +65,13 @@ export function detectLanguage(text: string): string | undefined {
   const count = (re: RegExp) => (s.match(re) ?? []).length
   const cyr = count(/[Ѐ-ӿ]/g)
   const lat = count(/[A-Za-zÀ-ÿĀ-ž]/g)
-  const kana = count(/[぀-ヿ]/g)
+  const kana = count(/[\u3040-ヿ]/g)
   const han = count(/[一-鿿]/g)
-  const hangul = count(/[가-힯]/g)
+  const hangul = count(/[가-\uD7AF]/g)
   const scripts: [string, number][] = [
     ['cyr', cyr], ['lat', lat], ['ja', kana * 3 + (kana ? han : 0)], ['zh', kana ? 0 : han], ['ko', hangul],
-    ['ar', count(/[؀-ۿ]/g)], ['he', count(/[֐-׿]/g)], ['el', count(/[Ͱ-Ͽ]/g)],
-    ['hi', count(/[ऀ-ॿ]/g)], ['th', count(/[฀-๿]/g)],
+    ['ar', count(/[\u0600-ۿ]/g)], ['he', count(/[\u0590-\u05FF]/g)], ['el', count(/[Ͱ-Ͽ]/g)],
+    ['hi', count(/[ऀ-ॿ]/g)], ['th', count(/[\u0E00-\u0E7F]/g)],
   ]
   scripts.sort((a, b) => b[1] - a[1])
   const [top, n] = scripts[0]

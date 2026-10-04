@@ -10,6 +10,8 @@ export type Route =
 export type LibraryFilter =
   | { kind: 'all' } | { kind: 'reading' } | { kind: 'unread' } | { kind: 'finished' }
   | { kind: 'favorites' } | { kind: 'collection'; id: string } | { kind: 'format'; format: string }
+  /** `key` is authorKey()/seriesKey(); `label` is shown as the page title */
+  | { kind: 'author'; key: string; label: string } | { kind: 'series'; key: string; label: string }
 
 export interface Toast {
   id: number

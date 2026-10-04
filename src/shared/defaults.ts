@@ -45,6 +45,7 @@ export function defaultSettings(lang: 'ru' | 'en' = 'ru'): Settings {
       sort: 'recent',
       coverSize: 168,
       copyFiles: true,
+      group: 'none',
     },
     goals: { dailyMinutes: 30 },
     schedule: {

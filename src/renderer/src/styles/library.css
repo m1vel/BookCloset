@@ -538,3 +538,44 @@
   .book-row { grid-template-columns: 42px minmax(0, 1fr) 70px 120px 30px; }
   .row-date, .row-size { display: none; }
 }
+
+/* ============ authors & series ============ */
+.link-inline {
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  border-radius: 3px;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--dur-1), color var(--dur-1);
+}
+.link-inline:hover { color: var(--accent); text-decoration-color: currentColor; }
+.card-series { color: var(--ink-3); font-weight: 700; }
+.groups { display: grid; gap: 34px; }
+.book-group { display: grid; gap: 16px; }
+.group-head { display: flex; align-items: baseline; gap: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.group-title { margin: 0; font-size: 24px; color: var(--ink); text-align: left; }
+[data-theme='paper'] .group-title { font-size: 28px; }
+button.group-title:hover { color: var(--accent); }
+.series-block { display: grid; gap: 10px; padding: 14px 16px; border-radius: var(--r-lg); background: var(--surface-2); }
+.series-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.series-name { font-weight: 750; font-size: 14px; }
+.series-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 6px; }
+.series-book { width: 46px; flex: none; border-radius: 3px; opacity: .75; transition: opacity var(--dur-1), transform var(--dur-2) var(--ease-out); }
+.series-book:hover { opacity: 1; transform: translateY(-2px); }
+.series-book.current { opacity: 1; outline: 2px solid var(--accent); outline-offset: 2px; }
+.series-book.next { opacity: 1; }
+.series-book .gen-cover { padding: 2px; }
+.series-book .gen-frame { padding: 2px; outline: none; }
+.series-book .gen-author, .series-book .gen-orn, .series-book .gen-format { display: none; }
+.field-row { display: grid; grid-template-columns: 1fr 110px; gap: 10px; }
+
+.lib-title h1.long {
+  font-size: 32px !important;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.1;
+}

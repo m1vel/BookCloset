@@ -72,7 +72,7 @@ export function detectFormat(name: string, head: Uint8Array): BookFormat {
     }
   }
   // text-like formats: look at the beginning
-  const text = new TextDecoder('latin1').decode(b.subarray(0, 512)).trimStart().replace(/^﻿|^ï»¿/, '')
+  const text = new TextDecoder('latin1').decode(b.subarray(0, 512)).trimStart().replace(/^\uFEFF|^ï»¿/, '')
   if (/^<\?xml[^>]*>\s*<FictionBook/i.test(text) || /<FictionBook/i.test(text)) return 'fb2'
   if (/^(MIME-Version|From|Content-Type|Subject|Date):/im.test(text) && /multipart\/related/i.test(new TextDecoder('latin1').decode(b))) return 'mht'
 

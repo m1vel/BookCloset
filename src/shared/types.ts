@@ -42,6 +42,8 @@ export interface BookRecord {
   pageCount?: number
   /** Metadata extraction finished (cover + title) */
   indexed: boolean
+  /** version of the metadata extractor that last processed the book (series support = 2) */
+  metaVersion?: number
   /** Path of the original file at import time (informational). */
   sourcePath?: string
 }
@@ -143,6 +145,7 @@ export interface Settings {
     sort: 'recent' | 'added' | 'title' | 'author' | 'progress'
     coverSize: number
     copyFiles: boolean
+    group: 'none' | 'author' | 'series'
   }
   goals: { dailyMinutes: number }
   translation: TranslationSettings

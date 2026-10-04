@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   MagnifyingGlass, Plus, SquaresFour, Rows, SortAscending, X, Play, FolderPlus, FilePlus, CaretDown,
 } from '@phosphor-icons/react'
@@ -9,7 +9,8 @@ import { useUi, type LibraryFilter } from '../store/ui'
 import { useT, formatDuration, type TKey } from '../i18n'
 import { bc } from '../api'
 import { Cover } from '../components/Cover'
-import { IconButton, Popover, MenuItem, Segmented } from '../components/ui'
+import { IconButton, Popover, MenuItem, MenuSep, Segmented } from '../components/ui'
+import { bookHasAuthor, seriesKey, groupBooks, type BookGroup } from '../library/series'
 import { BookCard, BookRow, BookContextMenu } from './BookCard'
 import { openBookById } from './open'
 import { EmptyShelf } from './EmptyShelf'
@@ -41,6 +42,10 @@ export function LibraryView({ filter }: { filter: LibraryFilter }) {
   const [addEl, setAddEl] = useState<HTMLElement | null>(null)
   const [ctx, setCtx] = useState<{ book: BookRecord; x: number; y: number } | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const filterKey = JSON.stringify(filter)
+  // a different list starts at the top
+  useEffect(() => { scrollRef.current?.scrollTo(0, 0) }, [filterKey])
 
   const filtered = useMemo(() => {
     let list = books
@@ -51,6 +56,8 @@ export function LibraryView({ filter }: { filter: LibraryFilter }) {
       case 'favorites': list = list.filter(b => b.favorite); break
       case 'collection': list = list.filter(b => b.collections.includes(filter.id)); break
       case 'format': list = list.filter(b => b.format === filter.format); break
+      case 'author': list = list.filter(b => bookHasAuthor(b, filter.key)); break
+      case 'series': list = list.filter(b => b.series && seriesKey(b.series) === filter.key); break
     }
     if (query.trim()) {
       const q = norm(query.trim())
@@ -58,11 +65,13 @@ export function LibraryView({ filter }: { filter: LibraryFilter }) {
     }
     const collator = new Intl.Collator(lang, { numeric: true, sensitivity: 'base' })
     const sorted = [...list]
+    // a series page always follows the reading order of the series
+    if (filter.kind === 'series') return sorted.sort((a, b) => (a.seriesIndex ?? 1e9) - (b.seriesIndex ?? 1e9) || collator.compare(a.title, b.title))
     switch (libPrefs.sort) {
       case 'recent': sorted.sort((a, b) => (b.openedAt ?? 0) - (a.openedAt ?? 0) || b.addedAt - a.addedAt); break
       case 'added': sorted.sort((a, b) => b.addedAt - a.addedAt); break
       case 'title': sorted.sort((a, b) => collator.compare(a.title, b.title)); break
-      case 'author': sorted.sort((a, b) => collator.compare(a.authors[0] ?? '￿', b.authors[0] ?? '￿') || collator.compare(a.title, b.title)); break
+      case 'author': sorted.sort((a, b) => collator.compare(a.authors[0] ?? '\uFFFF', b.authors[0] ?? '\uFFFF') || collator.compare(a.title, b.title)); break
       case 'progress': sorted.sort((a, b) => b.progress - a.progress); break
     }
     return sorted
@@ -77,7 +86,28 @@ export function LibraryView({ filter }: { filter: LibraryFilter }) {
 
   const title = filter.kind === 'collection'
     ? collections.find(c => c.id === filter.id)?.name ?? ''
-    : t(({ all: 'lib.allBooks', reading: 'nav.reading', unread: 'nav.unread', finished: 'nav.finished', favorites: 'nav.favorites', format: 'nav.formats', collection: 'nav.collections' } as const)[filter.kind])
+    : filter.kind === 'author' || filter.kind === 'series' ? filter.label
+      : t(({ all: 'lib.allBooks', reading: 'nav.reading', unread: 'nav.unread', finished: 'nav.finished', favorites: 'nav.favorites', format: 'nav.formats' } as const)[filter.kind])
+  const eyebrow = filter.kind === 'author' ? `${t('lib.authorPage')} · ${t('lib.books', { n: filtered.length })}`
+    : filter.kind === 'series' ? `${t('lib.seriesPage')} · ${t('lib.books', { n: filtered.length })}`
+      : t('lib.books', { n: filtered.length })
+  // grouping applies to the general lists, not to an author or series page
+  const groupBy = filter.kind === 'author' || filter.kind === 'series' || query ? 'none' : libPrefs.group
+  const groups = useMemo(() => (groupBy === 'none' ? null : groupBooks(filtered, groupBy, lang)), [filtered, groupBy, lang])
+  const openGroup = (g: BookGroup) => {
+    if (!g.key) return
+    useUi.getState().navigate({ name: 'library', filter: groupBy === 'author' ? { kind: 'author', key: g.key, label: g.label } : { kind: 'series', key: g.key, label: g.label } })
+  }
+  const onContext = (b: BookRecord) => (e: React.MouseEvent) => setCtx({ book: b, x: e.clientX, y: e.clientY })
+  const renderBooks = (list: BookRecord[], offset = 0) => libPrefs.view === 'grid' ? (
+    <div className="shelf-grid" style={{ '--cover-w': `${libPrefs.coverSize}px` } as CSSProperties}>
+      {list.map((b, i) => <BookCard key={b.id} book={b} index={offset + i} onContext={onContext(b)} />)}
+    </div>
+  ) : (
+    <div className="book-list">
+      {list.map(b => <BookRow key={b.id} book={b} onContext={onContext(b)} />)}
+    </div>
+  )
 
   const addFiles = async () => {
     setAddEl(null)
@@ -105,8 +135,8 @@ export function LibraryView({ filter }: { filter: LibraryFilter }) {
             </>
           ) : (
             <>
-              <span className="eyebrow">{t('lib.books', { n: filtered.length })}</span>
-              <h1 className="display">{title}</h1>
+              <span className="eyebrow">{eyebrow}</span>
+              <h1 className={`display ${title.length > 22 ? 'long' : ''}`}>{title}</h1>
             </>
           )}
         </div>
@@ -139,7 +169,7 @@ export function LibraryView({ filter }: { filter: LibraryFilter }) {
         </div>
       </header>
 
-      <div className="lib-scroll">
+      <div className="lib-scroll" ref={scrollRef}>
         {!books.length ? <EmptyShelf onAdd={addFiles} /> : (
           <>
             {showHero && hero && <ContinueHero book={hero} others={reading.slice(1, 6)} />}
@@ -155,20 +185,23 @@ export function LibraryView({ filter }: { filter: LibraryFilter }) {
               <div className="empty">
                 <h3 className="display">{query ? t('lib.noResults', { q: query }) : t('lib.empty.filtered')}</h3>
               </div>
-            ) : libPrefs.view === 'grid' ? (
-              <div className="shelf-grid" style={{ '--cover-w': `${libPrefs.coverSize}px` } as CSSProperties}>
-                {filtered.map((b, i) => (
-                  <BookCard key={b.id} book={b} index={i}
-                    onContext={(e) => setCtx({ book: b, x: e.clientX, y: e.clientY })} />
+            ) : groups ? (
+              <div className="groups">
+                {groups.map((g, gi) => (
+                  <section key={g.key || '_'} className="book-group">
+                    <div className="group-head">
+                      {g.key ? (
+                        <button className="group-title display" onClick={() => openGroup(g)}>{g.label}</button>
+                      ) : (
+                        <span className="group-title display muted">{groupBy === 'author' ? t('lib.unknownAuthor') : t('lib.noSeries')}</span>
+                      )}
+                      <span className="faint tabular">{g.books.length}</span>
+                    </div>
+                    {renderBooks(g.books, gi * 3)}
+                  </section>
                 ))}
               </div>
-            ) : (
-              <div className="book-list">
-                {filtered.map(b => (
-                  <BookRow key={b.id} book={b} onContext={e => setCtx({ book: b, x: e.clientX, y: e.clientY })} />
-                ))}
-              </div>
-            )}
+            ) : renderBooks(filtered)}
           </>
         )}
       </div>
@@ -178,6 +211,13 @@ export function LibraryView({ filter }: { filter: LibraryFilter }) {
         {sortOptions.map(o => (
           <MenuItem key={o} checked={libPrefs.sort === o} onClick={() => { update(s => { s.library.sort = o }); setSortEl(null) }}>
             {t(`lib.sort.${o}` as TKey)}
+          </MenuItem>
+        ))}
+        <MenuSep />
+        <div className="menu-label eyebrow">{t('lib.group')}</div>
+        {(['none', 'author', 'series'] as const).map(o => (
+          <MenuItem key={o} checked={libPrefs.group === o} onClick={() => { update(s => { s.library.group = o }); setSortEl(null) }}>
+            {t(`lib.group.${o}` as TKey)}
           </MenuItem>
         ))}
       </Popover>
