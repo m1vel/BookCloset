@@ -36,7 +36,7 @@ export async function processCover(blob: Blob): Promise<{ bytes: Uint8Array; col
   }
 }
 
-export async function extractMetadata(book: BookRecord): Promise<{ patch: Partial<BookRecord>; cover?: Uint8Array; color?: string }> {
+export async function extractMetadata(book: BookRecord, opts: { cover?: boolean } = {}): Promise<{ patch: Partial<BookRecord>; cover?: Uint8Array; color?: string }> {
   const source = await openRecord(book)
   try {
     const m = source.meta
@@ -50,6 +50,10 @@ export async function extractMetadata(book: BookRecord): Promise<{ patch: Partia
     if (m.series) patch.series = m.series
     if (m.seriesIndex) patch.seriesIndex = m.seriesIndex
     if (m.subjects?.length) patch.subjects = m.subjects.slice(0, 12)
+    if (opts.cover === false) {
+      if (source.kind === 'paged') patch.pageCount = source.doc.numPages
+      return { patch }
+    }
     let coverBlob: Blob | null = null
     if (source.kind === 'reflow') {
       coverBlob = (await Promise.resolve(source.book.getCover?.()).catch(() => null)) ?? null

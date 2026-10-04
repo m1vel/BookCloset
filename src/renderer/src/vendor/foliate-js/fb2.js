@@ -273,6 +273,12 @@ export const makeFB2 = async blob => {
         description: annotation ? converter.convert(annotation,
             { annotation: ['div', SECTION] }).innerHTML : null,
         subject: $$('title-info genre').map(getElementText),
+        // BookCloset patch: FB2 <sequence name number> → series
+        belongsTo: {
+            series: $$('title-info sequence')
+                .map(el => ({ name: el.getAttribute('name')?.trim(), position: parseFloat(el.getAttribute('number')) || undefined }))
+                .find(s => s.name) ?? null,
+        },
     }
     if ($('coverpage image')) {
         const src = converter.getImageSrc($('coverpage image'))

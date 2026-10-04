@@ -11,7 +11,7 @@ import { useLibrary } from '../store/library'
 import { useSettings } from '../store/settings'
 import { bc } from '../api'
 import { Popover, MenuItem, MenuSep } from '../components/ui'
-import { openBookById } from './open'
+import { openBookById, openAuthor } from './open'
 
 export const BookCard = memo(function BookCard({ book, index, onContext }: {
   book: BookRecord; index: number; onContext: (e: MouseEvent) => void
@@ -51,7 +51,12 @@ export const BookCard = memo(function BookCard({ book, index, onContext }: {
           </div>
         ) : null}
         <h3 className="card-title clamp-2" title={book.title}>{book.title}</h3>
-        <div className="card-author truncate">{book.authors.join(', ') || t('lib.unknownAuthor')}</div>
+        <div className="card-author truncate">
+          {book.authors.length ? book.authors.map((a, i) => (
+            <span key={a + i}>{i > 0 && ', '}<button className="link-inline" onClick={() => openAuthor(a)}>{a}</button></span>
+          )) : t('lib.unknownAuthor')}
+          {book.series && <span className="card-series" data-tip={book.series}> · {book.seriesIndex ? `#${book.seriesIndex}` : ''}</span>}
+        </div>
       </div>
     </article>
   )

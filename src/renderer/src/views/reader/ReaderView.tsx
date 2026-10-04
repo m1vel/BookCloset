@@ -19,6 +19,7 @@ import { SelectionMenu, AnnotationMenu, NoteEditor, FootnotePopup } from './Floa
 import { useProgressSaver, useReadingSession } from './hooks'
 import { TranslatePopover } from './TranslatePopover'
 import { useAppearance } from '../../store/appearance'
+import { nextInSeries } from '../../library/series'
 import { ReflowEngine } from '../../engines/reflow/ReflowEngine'
 import { PagedEngine } from '../../engines/paged/PagedEngine'
 import { openBookById } from '../open'
@@ -244,7 +245,16 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
         if (b && b.status !== 'finished') {
           endToastId.current = useUi.getState().toast({
             kind: 'info', text: t('reader.endOfBook'), sub: t('reader.finishedQ'),
-            action: { label: t('book.markFinished'), run: () => useLibrary.getState().update(bookId, { status: 'finished', progress: 1, finishedAt: Date.now() }) },
+            action: { label: t('book.markFinished'), run: () => {
+              const lib = useLibrary.getState()
+              lib.update(bookId, { status: 'finished', progress: 1, finishedAt: Date.now() })
+              const me = lib.books.find(x => x.id === bookId)
+              const next = me && nextInSeries(me, lib.books)
+              if (next) useUi.getState().toast({
+                kind: 'info', text: t('reader.nextBook', { title: next.title }), sticky: true,
+                action: { label: t('reader.readNext'), run: () => openBookById(next.id) },
+              })
+            } },
           })
         }
       }

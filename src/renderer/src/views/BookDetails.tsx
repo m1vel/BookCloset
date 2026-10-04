@@ -10,7 +10,8 @@ import { FORMAT_LABEL } from '../../../shared/formats'
 import { bc } from '../api'
 import { Cover } from '../components/Cover'
 import { IconButton } from '../components/ui'
-import { openBookById } from './open'
+import { openBookById, openAuthor, openSeries } from './open'
+import { seriesBooks, nextInSeries } from '../library/series'
 import { sanitizeHtml } from '../formats/sanitize'
 
 export function BookDetails({ bookId }: { bookId: string }) {
@@ -23,6 +24,9 @@ export function BookDetails({ bookId }: { bookId: string }) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState('')
   const [authors, setAuthors] = useState('')
+  const [series, setSeries] = useState('')
+  const [seriesIndex, setSeriesIndex] = useState('')
+  const allBooks = useLibrary(s => s.books)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !editing) close() }
@@ -52,10 +56,18 @@ export function BookDetails({ bookId }: { bookId: string }) {
   const startEdit = () => {
     setTitle(book.title)
     setAuthors(book.authors.join(', '))
+    setSeries(book.series ?? '')
+    setSeriesIndex(book.seriesIndex ? String(book.seriesIndex) : '')
     setEditing(true)
   }
   const saveEdit = () => {
-    lib.update(book.id, { title: title.trim() || book.title, authors: authors.split(',').map(s => s.trim()).filter(Boolean) })
+    const idx = parseFloat(seriesIndex.replace(',', '.'))
+    lib.update(book.id, {
+      title: title.trim() || book.title,
+      authors: authors.split(',').map(s => s.trim()).filter(Boolean),
+      series: series.trim() || undefined,
+      seriesIndex: series.trim() && Number.isFinite(idx) ? idx : undefined,
+    })
     setEditing(false)
   }
 
@@ -73,6 +85,12 @@ export function BookDetails({ bookId }: { bookId: string }) {
                 <input className="input" autoFocus value={title} onChange={e => setTitle(e.target.value)} /></div>
               <div className="field"><label>{t('book.authors')}</label>
                 <input className="input" value={authors} onChange={e => setAuthors(e.target.value)} /></div>
+              <div className="field-row">
+                <div className="field"><label>{t('book.series')}</label>
+                  <input className="input" value={series} onChange={e => setSeries(e.target.value)} /></div>
+                <div className="field narrow"><label>{t('book.seriesNumber')}</label>
+                  <input className="input" inputMode="decimal" value={seriesIndex} onChange={e => setSeriesIndex(e.target.value)} /></div>
+              </div>
               <div className="dialog-actions" style={{ marginTop: 4 }}>
                 <button type="button" className="btn ghost" onClick={() => setEditing(false)}>{t('common.cancel')}</button>
                 <button type="submit" className="btn primary">{t('book.save')}</button>
@@ -81,7 +99,11 @@ export function BookDetails({ bookId }: { bookId: string }) {
           ) : (
             <div className="details-titles">
               <h2 className="display">{book.title}</h2>
-              <div className="muted">{book.authors.join(', ') || t('lib.unknownAuthor')}</div>
+              <div className="muted">
+                {book.authors.length ? book.authors.map((a, i) => (
+                  <span key={a + i}>{i > 0 && ', '}<button className="link-inline" onClick={() => { close(); openAuthor(a) }}>{a}</button></span>
+                )) : t('lib.unknownAuthor')}
+              </div>
               <button className="btn ghost sm details-edit-btn" onClick={startEdit}><PencilSimple size={14} /> {t('book.edit')}</button>
             </div>
           )}
@@ -103,6 +125,35 @@ export function BookDetails({ bookId }: { bookId: string }) {
               <span className="tabular faint">{pct}%</span>
             </div>
           )}
+          {book.series && (() => {
+            const list = seriesBooks(allBooks, book.series)
+            const pos = list.findIndex(b => b.id === book.id)
+            const next = nextInSeries(book, allBooks)
+            return (
+              <section className="series-block">
+                <div className="series-head">
+                  <button className="link-inline series-name" onClick={() => { close(); openSeries(book.series!) }}>{book.series}</button>
+                  <span className="faint">{t('book.seriesOf', { i: book.seriesIndex ?? pos + 1, n: list.length })}</span>
+                </div>
+                {list.length > 1 && (
+                  <div className="series-strip">
+                    {list.map(b => (
+                      <button key={b.id} className={`series-book ${b.id === book.id ? 'current' : ''} ${next?.id === b.id ? 'next' : ''}`}
+                        data-tip={`${b.seriesIndex ? `#${b.seriesIndex} · ` : ''}${b.title}`}
+                        onClick={() => useUi.getState().showDetails(b.id)}>
+                        <Cover book={b} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {next && book.status === 'finished' && (
+                  <button className="btn sm" onClick={() => { close(); openBookById(next.id) }}>
+                    <Play size={13} weight="fill" /> {t('book.nextInSeries')}: {next.title}
+                  </button>
+                )}
+              </section>
+            )
+          })()}
           {collections.length > 0 && (
             <div className="chips">
               {collections.map(c => (

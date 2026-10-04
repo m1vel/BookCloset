@@ -20,10 +20,15 @@ interface LibraryState {
   deleteCollection: (id: string) => void
   toggleInCollection: (bookId: string, collectionId: string) => void
   reindex: (ids: string[]) => Promise<void>
+  refreshSeries: (ids: string[]) => Promise<void>
   refreshCounts: () => Promise<void>
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10)
+
+/** Bump when metadata extraction learns something new; older records get a quiet partial refresh. */
+export const META_VERSION = 2
+const SERIES_FORMATS = new Set(['fb2', 'fbz', 'epub', 'cbz', 'cbr', 'cb7', 'cbt', 'zip'])
 
 export const useLibrary = create<LibraryState>((set, get) => ({
   books: [],
@@ -40,6 +45,25 @@ export const useLibrary = create<LibraryState>((set, get) => ({
     // finish indexing books that were imported but not processed (e.g. app was closed)
     const pending = data.books.filter(b => !b.indexed).map(b => b.id)
     if (pending.length) get().reindex(pending)
+    // books indexed by an older extractor: pick up series without touching edited titles
+    const stale = data.books.filter(b => b.indexed && (b.metaVersion ?? 1) < META_VERSION)
+    const withSeries = stale.filter(b => SERIES_FORMATS.has(b.format)).map(b => b.id)
+    for (const b of stale) if (!SERIES_FORMATS.has(b.format)) get().update(b.id, { metaVersion: META_VERSION })
+    if (withSeries.length) setTimeout(() => get().refreshSeries(withSeries), 1500)
+  },
+
+  refreshSeries: async ids => {
+    const { extractMetadata } = await import('../formats/metadata')
+    for (const id of ids) {
+      const book = get().books.find(b => b.id === id)
+      if (!book) continue
+      try {
+        const { patch } = await extractMetadata(book, { cover: false })
+        await get().update(id, { series: patch.series, seriesIndex: patch.seriesIndex, metaVersion: META_VERSION })
+      } catch {
+        await get().update(id, { metaVersion: META_VERSION })
+      }
+    }
   },
 
   refreshCounts: async () => {
@@ -88,10 +112,10 @@ export const useLibrary = create<LibraryState>((set, get) => ({
           if (color) patch.coverColor = color
           set(s => ({ coverVersion: { ...s.coverVersion, [book.id]: Date.now() } }))
         }
-        await get().update(book.id, { ...patch, indexed: true })
+        await get().update(book.id, { ...patch, indexed: true, metaVersion: META_VERSION })
       } catch (e) {
         console.warn('index failed', book.fileName, e)
-        await get().update(book.id, { indexed: true })
+        await get().update(book.id, { indexed: true, metaVersion: META_VERSION })
       }
       set({ indexing: { done: i + 1, total } })
     }
