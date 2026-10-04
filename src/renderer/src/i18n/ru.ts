@@ -365,6 +365,28 @@ export const ru = {
   'focus.hint': 'Линейка следует за курсором, ↑/↓ — по строкам. F или Esc — выйти.',
   'focus.ruler': 'Линейка чтения',
   'focus.rulerLines': 'Высота линейки',
+
+  // read aloud
+  'tts.title': 'Читать вслух',
+  'tts.stop': 'Остановить чтение',
+  'tts.readFrom': 'Читать вслух отсюда',
+  'tts.prev': 'Предыдущее предложение',
+  'tts.next': 'Следующее предложение',
+  'tts.voice': 'Голос',
+  'tts.voicesFor': 'Голоса: {lang}',
+  'tts.otherVoices': 'Другие языки',
+  'tts.noVoice': 'В Windows нет голоса для языка «{lang}». Его можно установить бесплатно: Параметры → Время и язык → Речь → Добавить голоса.',
+  'tts.noVoiceShort': 'Нет голоса',
+  'tts.addVoices': 'Открыть настройки речи',
+  'tts.sleep': 'Таймер сна',
+  'tts.sleepMin': 'Через {n} мин',
+  'tts.sleepEndChapter': 'В конце главы',
+  'tts.sleepLeft': '{n} мин',
+  'tts.sleepChapter': 'до конца главы',
+  'tts.sleepDone': 'Таймер сна: чтение остановлено',
+  'tts.ended': 'Чтение вслух закончено',
+  'tts.noText': 'Здесь нет текста для чтения вслух',
+  'tts.noVoices': 'В системе не найдено ни одного голоса для чтения',
 }
 
 export type Dict = typeof ru

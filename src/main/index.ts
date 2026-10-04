@@ -123,6 +123,7 @@ function registerIpc() {
     platform: process.platform,
     locale: app.getLocale(),
     isPortable: !!process.env.PORTABLE_EXECUTABLE_DIR,
+    test: testMode,
   }))
   ipcMain.handle('app:pending-open', () => {
     const files = pendingOpen
@@ -255,6 +256,7 @@ function registerIpc() {
     if (/^https?:|^mailto:/i.test(url)) shell.openExternal(url)
   })
   ipcMain.handle('shell:open-data', () => shell.openPath(dataDir()))
+  ipcMain.handle('shell:speech-settings', () => shell.openExternal('ms-settings:speech'))
 }
 
 app.whenReady().then(() => {
