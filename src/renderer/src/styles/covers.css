@@ -1,0 +1,95 @@
+/* ---------- covers (real + generated cloth bindings) ---------- */
+.cover {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  width: 100%;
+  border-radius: 3px 6px 6px 3px;
+  overflow: hidden;
+  background: var(--surface-3);
+  box-shadow: var(--shadow-cover);
+  container-type: inline-size;
+}
+.cover > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: fade-in 400ms var(--ease-out) both;
+}
+/* binding: hinge crease + subtle page-edge sheen */
+.cover-spine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg,
+      rgba(0, 0, 0, .22) 0,
+      rgba(255, 255, 255, .18) 2.2%,
+      rgba(0, 0, 0, .1) 4.2%,
+      rgba(255, 255, 255, .04) 7%,
+      transparent 11%),
+    linear-gradient(180deg, rgba(255, 255, 255, .08), transparent 22%, transparent 80%, rgba(0, 0, 0, .1));
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08);
+}
+
+.gen-cover {
+  position: absolute;
+  inset: 0;
+  padding: 7cqw;
+  color: var(--foil);
+  background:
+    radial-gradient(120% 80% at 70% 10%, rgba(255, 255, 255, .14), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, .025) 0 2px, rgba(0, 0, 0, .03) 2px 4px),
+    var(--cloth);
+}
+.gen-frame {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4cqw;
+  padding: 10cqw 7cqw;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--foil) 70%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--foil) 45%, transparent);
+  outline-offset: 2.4cqw;
+}
+.gen-author {
+  font-family: var(--font-ui);
+  font-size: max(7px, 6.2cqw);
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  opacity: .85;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-orn { width: 34cqw; color: var(--foil); opacity: .9; }
+.gen-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: min(12.5cqw, calc(70cqw / (var(--longest) * .5)));
+  line-height: 1.04;
+  letter-spacing: -.005em;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-wrap: balance;
+}
+.gen-title.long { font-size: min(10cqw, calc(70cqw / (var(--longest) * .5))); }
+.gen-format {
+  position: absolute;
+  bottom: 4cqw;
+  font-family: var(--font-ui);
+  font-size: max(6px, 4.6cqw);
+  font-weight: 700;
+  letter-spacing: .2em;
+  opacity: .6;
+}

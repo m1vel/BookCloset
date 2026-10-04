@@ -1,0 +1,82 @@
+appId: com.bookcloset.app
+productName: BookCloset
+copyright: Copyright © 2026 BookCloset
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**
+  - build/icon.png
+  - package.json
+asar: true
+asarUnpack:
+  - node_modules/7z-wasm/**
+npmRebuild: false
+compression: maximum
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  executableName: BookCloset
+  legalTrademarks: BookCloset
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: BookCloset
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  uninstallDisplayName: BookCloset
+  deleteAppDataOnUninstall: false
+  multiLanguageInstaller: true
+  installerLanguages: [ru_RU, en_US]
+  artifactName: BookCloset-Setup-${version}.${ext}
+
+portable:
+  artifactName: BookCloset-Portable-${version}.${ext}
+
+fileAssociations:
+  - ext: [epub, kepub]
+    name: EPUB
+    description: EPUB e-book
+    role: Viewer
+    icon: build/icon.ico
+  - ext: [fb2, fbz]
+    name: FictionBook
+    description: FictionBook e-book
+    role: Viewer
+    icon: build/icon.ico
+  - ext: [mobi, azw, azw3, kf8, prc]
+    name: Kindle
+    description: Kindle e-book
+    role: Viewer
+    icon: build/icon.ico
+  - ext: [djvu, djv]
+    name: DjVu
+    description: DjVu document
+    role: Viewer
+    icon: build/icon.ico
+  - ext: [cbz, cbr, cb7, cbt]
+    name: Comic book
+    description: Comic book archive
+    role: Viewer
+    icon: build/icon.ico
+  - ext: [pdf]
+    name: PDF
+    description: PDF document
+    role: Viewer
+    icon: build/icon.ico
+  - ext: [chm]
+    name: CHM
+    description: Compiled HTML Help
+    role: Viewer
+    icon: build/icon.ico

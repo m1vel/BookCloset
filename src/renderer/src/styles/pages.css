@@ -1,0 +1,117 @@
+/* ============================================================
+   Paged engine (PDF / DjVu / comics)
+   ============================================================ */
+.paged-scroll {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  outline: none;
+  overscroll-behavior: contain;
+}
+.paged-scroll.mode-scroll { padding: 0; }
+.paged-canvas { position: relative; margin: 0 auto; }
+.paged-slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 28px;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+.mode-spread .paged-slide { gap: 0; }
+.mode-spread .paged-slide .page:first-child:not(:only-child) { box-shadow: var(--page-shadow), inset -18px 0 22px -18px rgba(0, 0, 0, .25); }
+
+.page {
+  --page-shadow: 0 1px 2px rgba(0, 0, 0, .12), 0 8px 24px -10px rgba(0, 0, 0, .35);
+  flex: none;
+  background: #fff;
+  box-shadow: var(--page-shadow);
+  overflow: hidden;
+  contain: strict;
+}
+html[data-reader-dark='1'] .page { --page-shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 28px -10px rgba(0, 0, 0, .8); }
+.page-canvas, .page-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  user-select: none;
+}
+.page-img { background: #fff; }
+.page-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(90deg, transparent, rgba(0, 0, 0, .035), transparent) no-repeat,
+    #fbfaf8;
+  background-size: 400px 100%;
+  animation: shimmer 1.6s linear infinite;
+  color: rgba(0, 0, 0, .18);
+  font: 700 40px var(--font-ui);
+}
+.paged-scroll.invert .page-canvas { filter: invert(.92) hue-rotate(180deg) contrast(.92); }
+.paged-scroll.invert .page { background: #111; }
+
+/* text layer (pdf.js + DjVu) */
+.page .textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 2;
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+}
+.page .textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+.page .textLayer {
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.page .textLayer > :not(.markedContent), .page .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.page .textLayer.djvu-text > span { font-size: inherit; transform-origin: 0 0; font-family: sans-serif; line-height: 1; }
+.page .textLayer .markedContent { display: contents; }
+.page .textLayer ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+.page .textLayer br::selection { background: transparent; }
+.page .textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: 0; cursor: default; user-select: none; }
+/* while dragging, pdf.js stretches .endOfContent over the page so the selection cannot jump to the whole page */
+.page .textLayer.selecting .endOfContent { top: 0; }
+
+.page .link-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.page .pdf-link { position: absolute; pointer-events: auto; cursor: pointer; border-radius: 2px; }
+.page .pdf-link:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+
+.hl-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.hl { position: absolute; border-radius: 2px; background: var(--hl); opacity: .38; mix-blend-mode: multiply; }
+.hl.underline { background: none; opacity: 1; border-bottom: 2px solid var(--hl); mix-blend-mode: normal; }
+.paged-scroll.invert .hl { mix-blend-mode: screen; opacity: .45; }
+.search-hit {
+  position: absolute;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  outline: 1.5px solid color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.search-hit.active { background: color-mix(in srgb, #ffb703 45%, transparent); outline-color: #e08a00; }

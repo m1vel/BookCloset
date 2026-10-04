@@ -1,0 +1,13 @@
+# dependencies & build output
+node_modules/
+out/
+dist/
+*.log
+
+# generated at build time (scripts/copy-assets.mjs)
+src/renderer/public/pdfjs/
+
+# local test data, screenshots and sample books (third-party files, not redistributable)
+tests/.data/
+tests/shots/
+samples/

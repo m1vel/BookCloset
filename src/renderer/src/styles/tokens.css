@@ -1,0 +1,199 @@
+/* ============================================================
+   BookCloset design tokens
+   Three interface themes share one token vocabulary:
+   paper (warm editorial) · midnight (dark minimal) · glass (depth)
+   ============================================================ */
+
+:root {
+  --titlebar-h: 44px;
+  --sidebar-w: 248px;
+  --controls-w: 138px; /* native window controls overlay */
+
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-in: cubic-bezier(.4, 0, 1, 1);
+  --ease-std: cubic-bezier(.2, .8, .2, 1);
+  --dur-1: 140ms;
+  --dur-2: 220ms;
+  --dur-3: 340ms;
+
+  --z-sticky: 10;
+  --z-drawer: 40;
+  --z-popover: 60;
+  --z-dialog: 80;
+  --z-toast: 100;
+
+  --hl-yellow: #f5d256;
+  --hl-green: #8fd694;
+  --hl-blue: #7fb8f0;
+  --hl-pink: #f29bb8;
+  --hl-purple: #b9a0f0;
+  --hl-orange: #f5a962;
+}
+
+/* ---------- PAPER: warm parchment, oxblood & amber ---------- */
+:root, [data-theme='paper'] {
+  color-scheme: light;
+  --bg: #f3ebde;
+  --bg-2: #ebe1cf;
+  --bg-grad: radial-gradient(1200px 700px at 85% -10%, #fbf4e6 0%, transparent 60%),
+             radial-gradient(900px 600px at -10% 110%, #e9dcc4 0%, transparent 55%);
+  --surface: #fbf7ef;
+  --surface-2: #f4ecdf;
+  --surface-3: #eadfcb;
+  --surface-hover: rgba(90, 62, 30, .06);
+  --surface-active: rgba(90, 62, 30, .11);
+  --overlay: rgba(43, 30, 18, .38);
+
+  --ink: #2a1f15;
+  --ink-2: #5a4936;
+  --ink-3: #85725b;
+  --ink-inverse: #fbf7ef;
+  --line: rgba(84, 58, 30, .13);
+  --line-2: rgba(84, 58, 30, .22);
+
+  --accent: #9f4f1a;
+  --accent-2: #7a3412;
+  --accent-ink: #fff9f0;
+  --accent-soft: rgba(159, 79, 26, .1);
+  --accent-ring: rgba(159, 79, 26, .35);
+  --gold: #b88a3e;
+  --success: #3f7d4a;
+  --danger: #b03a2e;
+
+  --font-ui: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', 'Georgia', serif;
+  --display-weight: 600;
+  --display-tracking: -0.01em;
+
+  --shadow-1: 0 1px 2px rgba(60, 38, 16, .06), 0 1px 1px rgba(60, 38, 16, .04);
+  --shadow-2: 0 2px 6px rgba(60, 38, 16, .07), 0 10px 24px -8px rgba(60, 38, 16, .16);
+  --shadow-3: 0 4px 12px rgba(60, 38, 16, .08), 0 24px 56px -12px rgba(60, 38, 16, .3);
+  --shadow-cover: 0 1px 1px rgba(50, 30, 10, .18), 0 4px 8px -2px rgba(50, 30, 10, .22),
+                  0 14px 26px -10px rgba(50, 30, 10, .38);
+  --shelf: linear-gradient(180deg, #d9c39d 0%, #c8ae84 55%, #b89b6e 100%);
+  --shelf-shadow: 0 8px 14px -6px rgba(70, 45, 15, .45);
+  --grain-opacity: .55;
+
+  --panel-bg: var(--surface);
+  --panel-blur: none;
+  --sidebar-bg: rgba(235, 225, 207, .55);
+  --titlebar-symbol: #4a3b2a;
+}
+
+/* ---------- MIDNIGHT: dark minimalism with a gold accent ---------- */
+[data-theme='midnight'] {
+  color-scheme: dark;
+  --bg: #0c0d10;
+  --bg-2: #101115;
+  --bg-grad: radial-gradient(1000px 600px at 80% -20%, rgba(226, 169, 91, .06) 0%, transparent 60%);
+  --surface: #15171c;
+  --surface-2: #1b1d23;
+  --surface-3: #23262e;
+  --surface-hover: rgba(255, 255, 255, .045);
+  --surface-active: rgba(255, 255, 255, .08);
+  --overlay: rgba(0, 0, 0, .6);
+
+  --ink: #ecebe7;
+  --ink-2: #a8a7a2;
+  --ink-3: #74737a;
+  --ink-inverse: #0c0d10;
+  --line: rgba(255, 255, 255, .07);
+  --line-2: rgba(255, 255, 255, .12);
+
+  --accent: #e3ab5d;
+  --accent-2: #f0c27f;
+  --accent-ink: #1d1406;
+  --accent-soft: rgba(227, 171, 93, .12);
+  --accent-ring: rgba(227, 171, 93, .4);
+  --gold: #e3ab5d;
+  --success: #6cc483;
+  --danger: #ef6f62;
+
+  --font-ui: 'Inter Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Inter Variable', 'Segoe UI', sans-serif;
+  --display-weight: 650;
+  --display-tracking: -0.025em;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, .35), 0 12px 28px -10px rgba(0, 0, 0, .6);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, .45), 0 30px 70px -20px rgba(0, 0, 0, .8);
+  --shadow-cover: 0 1px 1px rgba(0, 0, 0, .5), 0 8px 18px -6px rgba(0, 0, 0, .7), 0 20px 40px -18px rgba(0, 0, 0, .9);
+  --shelf: linear-gradient(180deg, #23252c 0%, #1a1c21 100%);
+  --shelf-shadow: 0 10px 18px -8px rgba(0, 0, 0, .9);
+  --grain-opacity: 0;
+
+  --panel-bg: var(--surface);
+  --panel-blur: none;
+  --sidebar-bg: #0f1013;
+  --titlebar-symbol: #dcdad5;
+}
+
+/* ---------- GLASS: translucent layers over an ambient cover glow ---------- */
+[data-theme='glass'] {
+  color-scheme: dark;
+  --bg: #12131c;
+  --bg-2: rgba(16, 18, 28, .42);
+  --bg-grad: radial-gradient(1100px 760px at 12% 0%, rgba(116, 98, 255, .28), transparent 60%),
+             radial-gradient(900px 700px at 100% 100%, rgba(255, 120, 160, .2), transparent 55%),
+             radial-gradient(800px 600px at 80% 10%, rgba(80, 200, 255, .16), transparent 60%);
+  --surface: rgba(255, 255, 255, .07);
+  --surface-2: rgba(255, 255, 255, .1);
+  --surface-3: rgba(255, 255, 255, .15);
+  --surface-hover: rgba(255, 255, 255, .08);
+  --surface-active: rgba(255, 255, 255, .14);
+  --overlay: rgba(6, 8, 16, .45);
+
+  --ink: #f6f7fb;
+  --ink-2: rgba(240, 242, 250, .74);
+  --ink-3: rgba(240, 242, 250, .52);
+  --ink-inverse: #10121a;
+  --line: rgba(255, 255, 255, .12);
+  --line-2: rgba(255, 255, 255, .2);
+
+  --accent: #a9bfff;
+  --accent-2: #c9d6ff;
+  --accent-ink: #0d1330;
+  --accent-soft: rgba(169, 191, 255, .16);
+  --accent-ring: rgba(169, 191, 255, .5);
+  --gold: #ffd58a;
+  --success: #7fe0a0;
+  --danger: #ff8a80;
+
+  --font-ui: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Manrope Variable', 'Segoe UI', sans-serif;
+  --display-weight: 700;
+  --display-tracking: -0.03em;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .2);
+  --shadow-2: 0 8px 24px -6px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .08);
+  --shadow-3: 0 20px 60px -12px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .1);
+  --shadow-cover: 0 2px 4px rgba(0, 0, 0, .3), 0 16px 32px -10px rgba(0, 0, 0, .6);
+  --shelf: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .05));
+  --shelf-shadow: 0 10px 20px -8px rgba(0, 0, 0, .5);
+  --grain-opacity: 0;
+
+  --panel-bg: rgba(22, 24, 36, .55);
+  --panel-blur: blur(30px) saturate(170%);
+  --sidebar-bg: rgba(14, 16, 26, .32);
+  --titlebar-symbol: #f6f7fb;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 1ms; --dur-2: 1ms; --dur-3: 1ms; }
+}

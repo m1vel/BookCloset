@@ -1,0 +1,229 @@
+// Types shared between the main process, preload and renderer.
+
+export type BookFormat =
+  | 'epub' | 'mobi' | 'azw3' | 'fb2' | 'fbz' | 'pdf' | 'djvu'
+  | 'txt' | 'html' | 'mht' | 'md' | 'rtf' | 'docx' | 'doc' | 'odt' | 'chm'
+  | 'cbz' | 'cbr' | 'cb7' | 'cbt' | 'image' | 'pdb' | 'zip' | 'calibre' | 'unknown'
+
+export type ReadingStatus = 'new' | 'reading' | 'finished'
+
+export interface BookRecord {
+  id: string
+  hash: string
+  /** Original file name (with extension) as imported. */
+  fileName: string
+  /** Extension of the stored copy, lower-case, without dot. */
+  ext: string
+  format: BookFormat
+  size: number
+  title: string
+  authors: string[]
+  language?: string
+  description?: string
+  series?: string
+  seriesIndex?: number
+  publisher?: string
+  published?: string
+  subjects?: string[]
+  hasCover: boolean
+  /** Dominant colour of the cover, used for ambient backgrounds and generated covers. */
+  coverColor?: string
+  addedAt: number
+  openedAt?: number
+  finishedAt?: number
+  /** Reading progress 0..1 */
+  progress: number
+  /** Engine-specific last position (CFI string for reflow, page number for paged). */
+  location?: string | number
+  status: ReadingStatus
+  favorite?: boolean
+  collections: string[]
+  readingSeconds: number
+  pageCount?: number
+  /** Metadata extraction finished (cover + title) */
+  indexed: boolean
+  /** Path of the original file at import time (informational). */
+  sourcePath?: string
+}
+
+export interface Collection {
+  id: string
+  name: string
+  createdAt: number
+}
+
+export interface LibraryData {
+  version: number
+  books: BookRecord[]
+  collections: Collection[]
+}
+
+export type HighlightColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple' | 'orange'
+
+export interface Annotation {
+  id: string
+  bookId: string
+  kind: 'highlight' | 'note' | 'bookmark'
+  color?: HighlightColor
+  style?: 'highlight' | 'underline' | 'squiggly'
+  /** Reflow engine: CFI range. Paged engine: JSON of {page, rects}. */
+  cfi?: string
+  page?: number
+  /** rectangles in page-relative coordinates (0..1) for the paged engine */
+  rects?: { x: number; y: number; w: number; h: number }[]
+  text?: string
+  note?: string
+  chapter?: string
+  progress?: number
+  createdAt: number
+  updatedAt: number
+}
+
+export interface ReadingSession {
+  bookId: string
+  start: number
+  end: number
+  seconds: number
+  progressFrom: number
+  progressTo: number
+  pages: number
+}
+
+export interface StatsData {
+  version: number
+  sessions: ReadingSession[]
+}
+
+export type UiTheme = 'paper' | 'midnight' | 'glass'
+export type PageTheme = 'auto' | 'white' | 'paper' | 'sepia' | 'gray' | 'night' | 'oled'
+export type Lang = 'ru' | 'en'
+
+export interface ReaderPrefs {
+  flow: 'paginated' | 'scrolled'
+  fontFamily: string
+  fontSize: number
+  lineHeight: number
+  /** horizontal gap between columns in % */
+  gap: number
+  /** top/bottom margins in px */
+  margin: number
+  maxWidth: number
+  columns: 1 | 2
+  justify: boolean
+  hyphenate: boolean
+  pageTheme: PageTheme
+  animated: boolean
+  /** override publisher fonts/colours */
+  overrideBookStyles: boolean
+  paragraphIndent: boolean
+  brightness: number
+}
+
+export interface PagedPrefs {
+  mode: 'single' | 'spread' | 'scroll'
+  fit: 'width' | 'page' | 'custom'
+  zoom: number
+  rtl: boolean
+  invertInDark: boolean
+  coverAlone: boolean
+}
+
+export type TranslationProviderId = 'free' | 'deepl' | 'yandex' | 'claude' | 'openai'
+
+export interface Settings {
+  version: number
+  lang: Lang
+  uiTheme: UiTheme
+  reader: ReaderPrefs
+  paged: PagedPrefs
+  /** comics / image books keep their own layout */
+  comic: PagedPrefs
+  library: {
+    view: 'grid' | 'list'
+    sort: 'recent' | 'added' | 'title' | 'author' | 'progress'
+    coverSize: number
+    copyFiles: boolean
+  }
+  goals: { dailyMinutes: number }
+  translation: TranslationSettings
+  schedule: ThemeSchedule
+  calibrePath?: string
+  windowBounds?: { x: number; y: number; width: number; height: number; maximized: boolean }
+}
+
+export interface ThemeSchedule {
+  mode: 'off' | 'time' | 'system'
+  dayTheme: UiTheme
+  nightTheme: UiTheme
+  dayPage: PageTheme
+  nightPage: PageTheme
+  /** "HH:MM" */
+  dayStart: string
+  nightStart: string
+  /** warm overlay strength over the page at night, 0..1 */
+  warmth: number
+}
+
+export interface TranslationSettings {
+  /** show the "Translate" action in the selection menu */
+  enabled: boolean
+  provider: TranslationProviderId
+  /** ISO 639-1 code */
+  targetLang: string
+  claudeModel: string
+  openaiModel: string
+  yandexFolderId: string
+  /** send the surrounding paragraph to AI providers to disambiguate */
+  useContext: boolean
+  /** translate a single word right away on double-click */
+  autoWord: boolean
+}
+
+export interface TranslateRequest {
+  text: string
+  to: string
+  /** ISO code or 'auto' */
+  from: string
+  /** locally detected source language, used by providers that need an explicit one */
+  fromHint?: string
+  provider: TranslationProviderId
+  context?: string
+  title?: string
+  model?: string
+  folderId?: string
+}
+
+export interface TranslateMeaning { pos: string; terms: string[] }
+
+export interface TranslateResult {
+  text: string
+  detected?: string
+  provider: TranslationProviderId
+  /** dictionary senses for single words */
+  meanings?: TranslateMeaning[]
+  /** pronunciation / transliteration of the source */
+  pronunciation?: string
+  note?: string
+  /** the free provider fell back to MyMemory */
+  fallback?: boolean
+}
+
+export type TranslateErrorCode = 'NO_KEY' | 'AUTH' | 'QUOTA' | 'RATE' | 'NETWORK' | 'REFUSED' | 'TOO_LONG' | 'FAILED'
+
+export type TranslateResponse =
+  | { ok: true; result: TranslateResult }
+  | { ok: false; code: TranslateErrorCode; message: string }
+
+export type KeyStatus = Partial<Record<TranslationProviderId, { set: boolean; hint: string }>>
+
+export interface ImportResult {
+  added: BookRecord[]
+  duplicates: BookRecord[]
+  failed: { path: string; error: string }[]
+}
+
+export interface ArchiveListing {
+  /** base url to fetch extracted files: bc://cache/<id>/ */
+  baseUrl: string
+  files: { path: string; size: number }[]
+}
