@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
-  MagnifyingGlass, Plus, SquaresFour, Rows, SortAscending, X, Play, FolderPlus, FilePlus, CaretDown,
+  MagnifyingGlass, Plus, SquaresFour, Rows, SortAscending, X, Play, FolderPlus, FilePlus, CaretDown, ImageSquare,
 } from '@phosphor-icons/react'
 import type { BookRecord } from '../../../shared/types'
 import { useLibrary } from '../store/library'
@@ -14,6 +14,7 @@ import { bookHasAuthor, seriesKey, groupBooks, type BookGroup } from '../library
 import { BookCard, BookRow, BookContextMenu } from './BookCard'
 import { openBookById } from './open'
 import { EmptyShelf } from './EmptyShelf'
+import { findMissingCovers } from '../library/online'
 
 export function greetingKey(): TKey {
   const h = new Date().getHours()
@@ -224,6 +225,9 @@ export function LibraryView({ filter }: { filter: LibraryFilter }) {
       <Popover anchor={addEl} open={!!addEl} onClose={() => setAddEl(null)} placement="bottom-end">
         <MenuItem icon={<FilePlus size={16} />} onClick={addFiles}>{t('lib.add')}</MenuItem>
         <MenuItem icon={<FolderPlus size={16} />} onClick={addFolder}>{t('lib.addFolder')}</MenuItem>
+        <MenuSep />
+        <MenuItem icon={<ImageSquare size={16} />} disabled={!books.some(b => !b.hasCover)}
+          onClick={() => { setAddEl(null); findMissingCovers() }}>{t('online.findCovers')}</MenuItem>
       </Popover>
       {ctx && <BookContextMenu book={ctx.book} at={{ x: ctx.x, y: ctx.y }} onClose={() => setCtx(null)} />}
     </div>

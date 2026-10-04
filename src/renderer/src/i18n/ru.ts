@@ -294,6 +294,33 @@ export const ru = {
   'set.about': 'О программе',
   'set.version': 'Версия {v}',
   'set.supported': 'Поддерживаемые форматы',
+
+  // online metadata
+  'online.find': 'Найти в интернете',
+  'online.title': 'Поиск в каталогах',
+  'online.sub': 'Open Library и Google Books — обложки, аннотации, год издания',
+  'online.query': 'Название',
+  'online.author': 'Автор',
+  'online.search': 'Искать',
+  'online.searching': 'Ищем в каталогах…',
+  'online.empty': 'Ничего не нашлось. Попробуйте изменить название или убрать автора.',
+  'online.offline': 'Каталоги недоступны. Проверьте подключение к интернету.',
+  'online.noDesc': 'В каталоге нет аннотации для этого издания.',
+  'online.noCover': 'Без обложки',
+  'online.apply': 'Применить',
+  'online.applyCover': 'Обложку',
+  'online.applyDesc': 'Аннотацию',
+  'online.applyYear': 'Год и издателя',
+  'online.applyAuthors': 'Авторов',
+  'online.applied': 'Данные обновлены',
+  'online.coverFailed': 'Не удалось загрузить обложку',
+  'online.match': 'Совпадение',
+  'online.pages': '{n} стр.',
+  'online.findCover': 'Найти обложку',
+  'online.findCovers': 'Найти недостающие обложки',
+  'online.bulkProgress': 'Ищем обложки: {done} из {total}',
+  'online.bulkDone': 'Найдено обложек: {found} из {total}',
+  'online.allHaveCovers': 'У всех книг уже есть обложки',
 }
 
 export type Dict = typeof ru

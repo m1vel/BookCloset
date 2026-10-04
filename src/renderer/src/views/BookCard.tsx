@@ -1,6 +1,6 @@
 import { memo, type CSSProperties, type MouseEvent } from 'react'
 import {
-  Info, Heart, CheckCircle, BookOpen, FolderSimplePlus, FolderOpen, Export, Trash, ArrowCounterClockwise,
+  Info, Heart, CheckCircle, BookOpen, FolderSimplePlus, FolderOpen, Export, Trash, ArrowCounterClockwise, ImageSquare,
 } from '@phosphor-icons/react'
 import type { BookRecord } from '../../../shared/types'
 import { FORMAT_LABEL } from '../../../shared/formats'
@@ -12,6 +12,7 @@ import { useSettings } from '../store/settings'
 import { bc } from '../api'
 import { Popover, MenuItem, MenuSep } from '../components/ui'
 import { openBookById, openAuthor } from './open'
+import { findMissingCovers } from '../library/online'
 
 export const BookCard = memo(function BookCard({ book, index, onContext }: {
   book: BookRecord; index: number; onContext: (e: MouseEvent) => void
@@ -101,6 +102,7 @@ export function BookContextMenu({ book, at, onClose }: { book: BookRecord; at: {
     <Popover anchor={at} open onClose={onClose} placement="bottom-start" offset={2}>
       <MenuItem icon={<BookOpen size={16} />} onClick={run(() => openBookById(book.id))}>{t('book.read')}</MenuItem>
       <MenuItem icon={<Info size={16} />} onClick={run(() => ui.showDetails(book.id))}>{t('book.details')}</MenuItem>
+      {!book.hasCover && <MenuItem icon={<ImageSquare size={16} />} onClick={run(() => findMissingCovers([book.id]))}>{t('online.findCover')}</MenuItem>}
       <MenuSep />
       <MenuItem icon={<Heart size={16} weight={book.favorite ? 'fill' : 'regular'} />}
         onClick={run(() => lib.update(book.id, { favorite: !book.favorite }))}>
