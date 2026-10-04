@@ -7,7 +7,7 @@ import type {
 const invoke = <T>(channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args) as Promise<T>
 
 const api = {
-  info: () => invoke<{ version: string; dataDir: string; platform: string; locale: string; isPortable: boolean }>('app:info'),
+  info: () => invoke<{ version: string; dataDir: string; platform: string; locale: string; isPortable: boolean; test: boolean }>('app:info'),
   pendingOpen: () => invoke<string[]>('app:pending-open'),
   onOpenFiles: (cb: (paths: string[]) => void) => {
     const fn = (_e: unknown, paths: string[]) => cb(paths)
@@ -73,6 +73,7 @@ const api = {
   copyImage: (bytes: Uint8Array) => invoke<boolean>('clipboard:image', bytes),
   openExternal: (url: string) => invoke<void>('shell:open', url),
   openDataDir: () => invoke<void>('shell:open-data'),
+  openSpeechSettings: () => invoke<void>('shell:speech-settings'),
 }
 
 export type BcApi = typeof api

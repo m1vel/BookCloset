@@ -10,6 +10,8 @@ import { sanitizeHtml } from '../../formats/sanitize'
 import '../../vendor/foliate-js/view.js'
 import { Overlayer } from '../../vendor/foliate-js/overlayer.js'
 import * as CFI from '../../vendor/foliate-js/epubcfi.js'
+import { sentencesIn, paintSpeech } from '../../speech/segment'
+import { detectLanguage } from '../../translation'
 
 interface Props {
   book: FoliateBook
@@ -89,6 +91,10 @@ export const ReflowEngine = forwardRef<EngineController, Props>(function ReflowE
   const annotationClicked = useRef(0)
   const accentRef = useRef(accent)
   accentRef.current = accent
+  /** visible range of the current page (read-aloud starts here) */
+  const lastRange = useRef<Range | null>(null)
+  const metaRef = useRef(meta)
+  metaRef.current = meta
 
   const annIndex = (cfi: string) => {
     if (indexCache.current.has(cfi)) return indexCache.current.get(cfi)!
@@ -155,6 +161,7 @@ export const ReflowEngine = forwardRef<EngineController, Props>(function ReflowE
       // during the first layout pass (zero-size container) foliate may report Infinity/NaN
       if (!Number.isFinite(d.fraction) || d.fraction < 0 || d.fraction > 1.0001) return
       lastCfi.current = d.cfi
+      if (d.range) lastRange.current = d.range
       updateMarginals(view, d)
       const loc = d.location
       eventsRef.current.onRelocate({
@@ -365,6 +372,49 @@ export const ReflowEngine = forwardRef<EngineController, Props>(function ReflowE
   }, [annotations])
 
   useImperativeHandle(ref, (): EngineController => ({
+    async speech(where) {
+      const view = viewRef.current
+      if (!view) return null
+      const r = view.renderer
+      if (where === 'next') {
+        const before = r.getContents()[0]?.index
+        if (before == null || before >= view.book.sections.length - 1) return null
+        await r.nextSection()
+        // wait for the new section to be laid out
+        for (let i = 0; i < 40 && r.getContents()[0]?.index === before; i++) await new Promise(res => setTimeout(res, 100))
+        if (r.getContents()[0]?.index === before) return null
+        await new Promise(res => setTimeout(res, 150))
+      }
+      const c = r.getContents()[0]
+      const doc: Document | undefined = c?.doc
+      if (!doc?.body) return null
+      const lang = doc.documentElement.lang || doc.body.lang || metaRef.current.language
+        || detectLanguage(doc.body.textContent ?? '') || 'en'
+      let from: { node: Node; offset: number } | null = null
+      if (where === 'start') {
+        const sel = doc.getSelection()
+        const range = sel && !sel.isCollapsed ? sel.getRangeAt(0) : lastRange.current
+        if (range && range.startContainer.ownerDocument === doc) from = { node: range.startContainer, offset: range.startOffset }
+        sel?.removeAllRanges()
+      }
+      const color = accentRef.current
+      const units = sentencesIn(doc.body, lang, from).map(s => ({
+        text: s.text,
+        mark: (w?: [number, number]) => paintSpeech(doc, s.range, w ? s.sub(w[0], w[1]) : null, color),
+        unmark: () => paintSpeech(doc, null, null, color),
+        reveal: () => {
+          if (!r.scrolled) { r.scrollToAnchor(s.range); return }
+          // scrolled flow: keep the sentence in the upper third, scroll only when it leaves the view
+          const frame = (doc.defaultView?.frameElement as HTMLElement | null)?.getBoundingClientRect()
+          const vp = (view as HTMLElement).getBoundingClientRect()
+          const rect = s.range.getBoundingClientRect()
+          if (!frame || !rect.height) return
+          const top = frame.top + rect.top
+          if (top < vp.top + 40 || top + rect.height > vp.bottom - 70) r.scrollFree(Math.round(top - (vp.top + vp.height * 0.3)))
+        },
+      }))
+      return { lang, units }
+    },
     scrollStep: px => {
       const r = viewRef.current?.renderer
       if (!r || !r.scrolled) return null

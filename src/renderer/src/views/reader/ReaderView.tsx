@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ListBullets, MagnifyingGlass, Quotes, BookmarkSimple, TextAa, CornersOut, CornersIn, CaretLeft, CaretRight,
-  WarningCircle, PlayCircle, PauseCircle, Eyeglasses,
+  WarningCircle, PlayCircle, PauseCircle, Eyeglasses, SpeakerHigh,
 } from '@phosphor-icons/react'
 import type { Annotation, HighlightColor } from '../../../../shared/types'
 import { useLibrary } from '../../store/library'
@@ -24,6 +24,7 @@ import { ReflowEngine } from '../../engines/reflow/ReflowEngine'
 import { PagedEngine } from '../../engines/paged/PagedEngine'
 import { openBookById } from '../open'
 import { useAutoRead, AutoReadBar, FocusRuler, stepValue, SPEED_STEPS, PAGE_STEPS } from './AutoRead'
+import { useReadAloud, ReadAloudBar } from './ReadAloud'
 
 const uid = () => Math.random().toString(36).slice(2, 11)
 
@@ -74,6 +75,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
   focusRef.current = focusMode
   const stageRef = useRef<HTMLDivElement>(null)
   const ctrl = useRef<EngineController>(null)
+  const raRef = useRef<ReturnType<typeof useReadAloud> | null>(null)
   const relocRef = useRef<Relocation | null>(null)
   const endToastShown = useRef(false)
   const endToastId = useRef<number | null>(null)
@@ -157,8 +159,8 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
   }, [bookId])
 
   const isRtl = source?.kind === 'paged' ? (paged.rtl || !!(source.doc as any).rtl) : source?.meta.rtl
-  const goLeft = () => (isRtl ? ctrl.current?.next() : ctrl.current?.prev())
-  const goRight = () => (isRtl ? ctrl.current?.prev() : ctrl.current?.next())
+  const goLeft = () => { (isRtl ? ctrl.current?.next() : ctrl.current?.prev()); raRef.current?.followNavigation() }
+  const goRight = () => { (isRtl ? ctrl.current?.prev() : ctrl.current?.next()); raRef.current?.followNavigation() }
 
   // ---------------------------------------------------------------- keyboard
   const toggleBookmark = useCallback(() => {
@@ -202,6 +204,9 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
     if (e.ctrlKey || e.altKey || e.metaKey) return
     // layout-independent letters (Russian keyboard)
     if (e.code === 'KeyS' && !e.shiftKey) { e.preventDefault(); toggleAuto(); return }
+    if (e.code === 'KeyR' && !e.shiftKey) { e.preventDefault(); toggleReadAloud(); return }
+    const reading = raRef.current
+    if (reading && reading.status !== 'idle' && k === ' ') { e.preventDefault(); reading.toggle(); return }
     if (e.code === 'KeyF' && !e.shiftKey) { e.preventDefault(); toggleFocus(); return }
     if (auto) {
       if (k === ' ') { e.preventDefault(); setAutoHold(h => !h); return }
@@ -227,6 +232,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
       case 'End': e.preventDefault(); ctrl.current?.goToFraction(1); break
       case 'F11': e.preventDefault(); bc.win.fullscreen(); break
       case 'Escape':
+        if (reading && reading.status !== 'idle' && !(translation || annMenu || footnote || noteEdit || selection || panel)) { reading.stop(); break }
         if (auto && !(translation || annMenu || footnote || noteEdit || selection || panel)) { setAuto(false); break }
         if (focusMode && !(translation || annMenu || footnote || noteEdit || selection || panel)) { setFocusMode(false); break }
         if (translation || annMenu || footnote || noteEdit) { setTranslation(null); setAnnMenu(null); setFootnote(null); setNoteEdit(null) }
@@ -325,7 +331,21 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
     onActivity: () => session.activity(),
     onEnd: () => { setAuto(false); useUi.getState().toast({ kind: 'info', text: t('auto.ended') }) },
   })
+  const ra = useReadAloud({
+    ctrl,
+    onActivity: () => session.activity(),
+    onStop: reason => useUi.getState().toast(reason === 'notext'
+      ? { kind: 'info', text: t('tts.noText') }
+      : reason === 'novoice' ? { kind: 'error', text: t('tts.noVoices') }
+      : reason === 'sleep' ? { kind: 'info', text: t('tts.sleepDone') }
+      : { kind: 'info', text: t('tts.ended') }),
+  })
+  raRef.current = ra
+  function toggleReadAloud() {
+    if (ra.status === 'idle') { setAuto(false); ra.start() } else ra.stop()
+  }
   function toggleAuto() {
+    if (!auto) ra.stop()
     setAuto(a => !a)
     setAutoHold(false)
   }
@@ -412,6 +432,9 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
           {reloc?.chapter && <div className="rt-chapter truncate">{reloc.chapter}</div>}
         </div>
         <div className="rt-right no-drag">
+          <IconButton label={ra.status !== 'idle' ? t('tts.stop') : t('tts.title')} shortcut="R" active={ra.status !== 'idle'} onClick={toggleReadAloud}>
+            <SpeakerHigh size={20} />
+          </IconButton>
           <IconButton label={auto ? t('auto.stop') : t('auto.start')} shortcut="S" active={auto} onClick={toggleAuto}>
             {auto ? <PauseCircle size={20} /> : <PlayCircle size={20} />}
           </IconButton>
@@ -465,6 +488,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
         )}
       </div>
 
+      {ra.status !== 'idle' && source && <ReadAloudBar ra={ra} />}
       {auto && source && (
         <AutoReadBar continuous={continuous} prefs={autoPrefs} paused={autoPaused} manualPause={autoHold} progressRef={autoProgress}
           focus={focusMode} onToggle={() => setAutoHold(h => !h)} onSpeed={changeSpeed}
@@ -475,7 +499,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
       <footer className="reader-bottom">
         <div className="rb-chapter truncate">{reloc?.chapter ?? ''}</div>
         <ProgressScrubber value={reloc?.fraction ?? book.progress} ticks={ticks}
-          onScrub={setScrub} onCommit={f => { setScrub(null); ctrl.current?.goToFraction(f) }} />
+          onScrub={setScrub} onCommit={f => { setScrub(null); ctrl.current?.goToFraction(f); ra.followNavigation() }} />
         <div className="rb-meta tabular">
           {reloc?.page && reloc.pages ? <span>{t('reader.page', { cur: reloc.page, total: reloc.pages })}</span> : null}
           <span className="rb-pct">{pct}%</span>
@@ -488,7 +512,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
       {panel && (
         <ReaderPanel tab={panel} setTab={setPanel} onClose={() => { setPanel(null); ctrl.current?.focus() }} toc={toc}
           currentChapter={reloc?.chapter} annotations={annotations} controller={ctrl.current}
-          onNavigate={target => { ctrl.current?.goTo(target); if (window.innerWidth < 1100) setPanel(null) }}
+          onNavigate={target => { ctrl.current?.goTo(target); ra.followNavigation(); if (window.innerWidth < 1100) setPanel(null) }}
           onDelete={id => saveAnnotations(annotations.filter(a => a.id !== id))}
           onEditNote={a => setNoteEdit({ rect: new DOMRect(window.innerWidth / 2, window.innerHeight / 2, 0, 0), quote: a.text, initial: a.note, id: a.id })}
           onExport={exportNotes} search={search} setSearch={setSearch} paged={pagedMode} searchNonce={searchNonce} />
@@ -511,6 +535,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
             setSelection(null)
           }}
           onTranslate={trSettings.enabled ? () => openTranslation(selection) : undefined}
+          onReadFrom={() => { setAuto(false); ra.start(); setSelection(null) }}
           onQuoteCard={() => {
             useUi.getState().showQuoteCard({ bookId, text: selection.text, chapter: selection.chapter ?? relocRef.current?.chapter })
             ctrl.current?.clearSelection()

@@ -48,6 +48,7 @@ export function defaultSettings(lang: 'ru' | 'en' = 'ru'): Settings {
       group: 'none',
     },
     goals: { dailyMinutes: 30 },
+    tts: { rate: 1, voices: {} },
     autoRead: { speed: 40, pageSeconds: 30, ruler: true, rulerLines: 2 },
     quoteCard: { style: 'paper', format: 'square', font: 'cormorant', showCover: true, showBrand: true },
     schedule: {

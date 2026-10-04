@@ -2,6 +2,8 @@ import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useLayou
 import type { Annotation, PagedPrefs } from '../../../../shared/types'
 import type { PagedDocument, TocItem } from '../../formats/types'
 import type { EngineController, EngineEvents, SearchHit } from '../types'
+import { sentencesIn, paintSpeech } from '../../speech/segment'
+import { detectLanguage } from '../../translation'
 import { HIGHLIGHT_COLORS } from '../types'
 import type { PageThemeDef } from '../page-themes'
 
@@ -418,6 +420,53 @@ export const PagedEngine = forwardRef<EngineController, Props>(function PagedEng
   }
 
   useImperativeHandle(ref, (): EngineController => ({
+    async speech(where) {
+      if (!doc.hasText) return null
+      let p = pageRef.current
+      let from: { node: Node; offset: number } | null = null
+      const sel = window.getSelection()
+      if (where === 'start' && sel && !sel.isCollapsed) {
+        const pageEl = (sel.anchorNode as Node | null)?.parentElement?.closest('[data-page]') as HTMLElement | null
+        if (pageEl && scrollRef.current?.contains(pageEl)) {
+          p = Number(pageEl.dataset.page)
+          const r0 = sel.getRangeAt(0)
+          from = { node: r0.startContainer, offset: r0.startOffset }
+        }
+        sel.removeAllRanges()
+      }
+      if (where === 'next') {
+        if (p >= doc.numPages - 1) return null
+        p += 1
+        goToPage(p)
+      }
+      // the text layer appears once the page is rendered
+      let layer: HTMLElement | null = null
+      for (let i = 0; i < 40; i++) {
+        layer = scrollRef.current?.querySelector(`[data-page="${p}"] .textLayer`) as HTMLElement | null
+        if (layer?.textContent?.trim()) break
+        await new Promise(res => setTimeout(res, 100))
+      }
+      // PDFs rarely declare a language: detect it from the page text
+      const sample = layer?.textContent || (await doc.getText?.(p).catch(() => '')) || ''
+      const lang = (await doc.getMeta().catch(() => null))?.language || detectLanguage(sample) || 'en'
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--page-accent').trim() || '#c46a2b'
+      const reveal = () => { if (pageRef.current !== p && !slides[slideIndex]?.includes(p)) goToPage(p) }
+      if (layer?.textContent?.trim()) {
+        const units = sentencesIn(layer, lang, from).map(s => ({
+          text: s.text,
+          mark: (w?: [number, number]) => paintSpeech(document, s.range, w ? s.sub(w[0], w[1]) : null, accent),
+          unmark: () => paintSpeech(document, null, null, accent),
+          reveal,
+        }))
+        return { lang, units }
+      }
+      // no text layer on screen: speak the page text without highlighting
+      const text = (await doc.getText?.(p).catch(() => '')) ?? ''
+      const seg = new Intl.Segmenter(lang, { granularity: 'sentence' })
+      const units = [...seg.segment(text.replace(/\s+/g, ' '))].map(x => x.segment.trim()).filter(x => /[\p{L}\p{N}]/u.test(x))
+        .map(t => ({ text: t, mark: () => {}, unmark: () => {}, reveal }))
+      return { lang, units }
+    },
     scrollStep: px => {
       const el = scrollRef.current
       if (mode !== 'scroll' || !el) return null
@@ -466,7 +515,7 @@ export const PagedEngine = forwardRef<EngineController, Props>(function PagedEng
     bookmarkLocation: () => ({ page: pageRef.current, text: undefined }),
     isBookmarked: list => list.find(a => a.kind === 'bookmark' && a.page === pageRef.current) ?? null,
     focus: () => scrollRef.current?.focus(),
-  }), [step, goToPage, doc, mode])
+  }), [step, goToPage, doc, mode, slides, slideIndex])
 
   const hlFor = (i: number) => annotations.filter(a => a.page === i && a.kind !== 'bookmark')
   const searchFor = (i: number) => (search?.query ? { query: search.query, active: search.page === i } : null)

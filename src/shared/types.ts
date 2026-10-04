@@ -152,8 +152,15 @@ export interface Settings {
   schedule: ThemeSchedule
   quoteCard: QuoteCardPrefs
   autoRead: AutoReadPrefs
+  tts: TtsPrefs
   calibrePath?: string
   windowBounds?: { x: number; y: number; width: number; height: number; maximized: boolean }
+}
+
+export interface TtsPrefs {
+  rate: number
+  /** chosen voiceURI per language (ISO 639-1) */
+  voices: Record<string, string>
 }
 
 export interface AutoReadPrefs {

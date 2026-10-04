@@ -46,6 +46,22 @@ export interface EngineEvents {
   onError: (e: unknown) => void
 }
 
+/** One sentence for read-aloud, bound to its place on the page. */
+export interface SpeechUnit {
+  text: string
+  /** highlight the sentence, optionally a word inside it (char offset/length within `text`) */
+  mark(word?: [number, number]): void
+  unmark(): void
+  /** make sure the sentence is on screen (turns the page / scrolls when needed) */
+  reveal(): void
+}
+
+export interface SpeechCursor {
+  units: SpeechUnit[]
+  /** BCP-47 language of the text */
+  lang: string
+}
+
 export interface EngineController {
   next(): void
   prev(): void
@@ -65,6 +81,12 @@ export interface EngineController {
    * 'edge' when the current section/document cannot scroll further, null for paginated layouts.
    */
   scrollStep(px: number): 'moved' | 'edge' | null
+  /**
+   * Read-aloud text. 'start': from the selection or the top of the current page to the end of the
+   * section (reflow) / page (paged). 'next': moves to the following section/page first.
+   * null when there is nothing (more) to read.
+   */
+  speech(where: 'start' | 'next'): Promise<SpeechCursor | null>
 }
 
 export const HIGHLIGHT_COLORS: Record<HighlightColor, string> = {
