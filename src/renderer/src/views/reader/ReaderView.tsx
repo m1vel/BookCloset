@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ListBullets, MagnifyingGlass, Quotes, BookmarkSimple, TextAa, CornersOut, CornersIn, CaretLeft, CaretRight,
-  WarningCircle,
+  WarningCircle, PlayCircle, PauseCircle, Eyeglasses,
 } from '@phosphor-icons/react'
 import type { Annotation, HighlightColor } from '../../../../shared/types'
 import { useLibrary } from '../../store/library'
@@ -23,6 +23,7 @@ import { nextInSeries } from '../../library/series'
 import { ReflowEngine } from '../../engines/reflow/ReflowEngine'
 import { PagedEngine } from '../../engines/paged/PagedEngine'
 import { openBookById } from '../open'
+import { useAutoRead, AutoReadBar, FocusRuler, stepValue, SPEED_STEPS, PAGE_STEPS } from './AutoRead'
 
 const uid = () => Math.random().toString(36).slice(2, 11)
 
@@ -64,6 +65,14 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
   const [search, setSearch] = useState<SearchState>({ query: '', hits: [], progress: 0, running: false })
   const [searchNonce, setSearchNonce] = useState(0)
   const [scrub, setScrub] = useState<number | null>(null)
+  const autoPrefs = useSettings(s => s.settings.autoRead)
+  const updateSettings = useSettings(s => s.update)
+  const [auto, setAuto] = useState(false)
+  const [autoHold, setAutoHold] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+  const focusRef = useRef(false)
+  focusRef.current = focusMode
+  const stageRef = useRef<HTMLDivElement>(null)
   const ctrl = useRef<EngineController>(null)
   const relocRef = useRef<Relocation | null>(null)
   const endToastShown = useRef(false)
@@ -125,7 +134,8 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
   useEffect(() => { if (pinned) setChrome(true); else scheduleHide() }, [pinned, scheduleHide])
   useEffect(() => {
     const onPointer = (x: number, y: number) => {
-      if (y < 84 || y > window.innerHeight - 96 || (panel && x < 380)) {
+      const edge = focusRef.current ? 18 : 84
+      if (y < edge || y > window.innerHeight - (focusRef.current ? 18 : 96) || (panel && x < 380)) {
         setChrome(true)
         scheduleHide()
       }
@@ -166,6 +176,9 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
   }, [annotations, bookId, saveAnnotations])
 
   const onKey = useCallback((e: KeyboardEvent) => {
+    // the paged engine forwards its keydown and the same event then bubbles to window: handle once
+    if ((e as any).__bcHandled) return
+    ;(e as any).__bcHandled = true
     session.activity()
     const k = e.key
     const target = e.target as HTMLElement | null
@@ -187,6 +200,19 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
     }
     if (e.ctrlKey && k === '0') { e.preventDefault(); if (source?.kind === 'paged') setPaged({ fit: 'width' }); return }
     if (e.ctrlKey || e.altKey || e.metaKey) return
+    // layout-independent letters (Russian keyboard)
+    if (e.code === 'KeyS' && !e.shiftKey) { e.preventDefault(); toggleAuto(); return }
+    if (e.code === 'KeyF' && !e.shiftKey) { e.preventDefault(); toggleFocus(); return }
+    if (auto) {
+      if (k === ' ') { e.preventDefault(); setAutoHold(h => !h); return }
+      if (k === '+' || k === '=' || e.code === 'NumpadAdd') { e.preventDefault(); changeSpeed(1); return }
+      if (k === '-' || e.code === 'NumpadSubtract') { e.preventDefault(); changeSpeed(-1); return }
+    }
+    if (focusMode && autoPrefs.ruler && (k === 'ArrowDown' || k === 'ArrowUp')) {
+      e.preventDefault()
+      window.dispatchEvent(new CustomEvent('ruler-step', { detail: k === 'ArrowDown' ? 1 : -1 }))
+      return
+    }
     switch (k) {
       case 'ArrowRight': e.preventDefault(); goRight(); break
       case 'ArrowLeft': e.preventDefault(); goLeft(); break
@@ -201,6 +227,8 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
       case 'End': e.preventDefault(); ctrl.current?.goToFraction(1); break
       case 'F11': e.preventDefault(); bc.win.fullscreen(); break
       case 'Escape':
+        if (auto && !(translation || annMenu || footnote || noteEdit || selection || panel)) { setAuto(false); break }
+        if (focusMode && !(translation || annMenu || footnote || noteEdit || selection || panel)) { setFocusMode(false); break }
         if (translation || annMenu || footnote || noteEdit) { setTranslation(null); setAnnMenu(null); setFootnote(null); setNoteEdit(null) }
         else if (selection) { ctrl.current?.clearSelection(); setSelection(null) }
         else if (panel) setPanel(null)
@@ -210,7 +238,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
       case 't': case 'T': setPanel(p => (p === 'toc' ? null : 'toc')); break
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [source, reader, paged, selection, panel, fullscreen, toggleBookmark, isRtl, trSettings.enabled, translation, annMenu, footnote, noteEdit])
+  }, [source, reader, paged, selection, panel, fullscreen, toggleBookmark, isRtl, trSettings.enabled, translation, annMenu, footnote, noteEdit, auto, focusMode, autoPrefs])
   const onKeyRef = useRef(onKey)
   onKeyRef.current = onKey
   useEffect(() => {
@@ -281,6 +309,50 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [source, reader.flow, paged.mode, footnote, isRtl, trSettings.enabled, trSettings.autoWord])
 
+  // ---------------------------------------------------------------- auto-read & focus mode
+  const continuous = source?.kind === 'paged' ? paged.mode === 'scroll' : reader.flow === 'scrolled'
+  const dialogOpen = useUi(s => !!(s.quoteCard || s.confirmReq || s.promptReq))
+  const [hidden, setHidden] = useState(document.hidden)
+  useEffect(() => {
+    const on = () => setHidden(document.hidden)
+    document.addEventListener('visibilitychange', on)
+    return () => document.removeEventListener('visibilitychange', on)
+  }, [])
+  const uiBusy = !!(panel || appearanceEl || selection || annMenu || noteEdit || translation || footnote || scrub != null || !source || error)
+  const autoPaused = autoHold || uiBusy || dialogOpen || hidden
+  const autoProgress = useAutoRead({
+    ctrl, relocRef, running: auto, paused: autoPaused, continuous, prefs: autoPrefs,
+    onActivity: () => session.activity(),
+    onEnd: () => { setAuto(false); useUi.getState().toast({ kind: 'info', text: t('auto.ended') }) },
+  })
+  function toggleAuto() {
+    setAuto(a => !a)
+    setAutoHold(false)
+  }
+  function toggleFocus() {
+    setFocusMode(f => {
+      if (!f) {
+        setChrome(false)
+        useUi.getState().toast({ kind: 'info', text: t('focus.on'), sub: t('focus.hint') })
+      }
+      return !f
+    })
+  }
+  function changeSpeed(dir: 1 | -1) {
+    updateSettings(s => {
+      if (continuous) s.autoRead.speed = stepValue(SPEED_STEPS, s.autoRead.speed, dir)
+      else s.autoRead.pageSeconds = stepValue(PAGE_STEPS, s.autoRead.pageSeconds, dir === 1 ? -1 : 1)
+    })
+  }
+  const rulerHeight = Math.round(source?.kind === 'paged'
+    ? 30 * autoPrefs.rulerLines + 12
+    : reader.fontSize * reader.lineHeight * autoPrefs.rulerLines + 14)
+  const dimColor = useMemo(() => {
+    const m = /^#?([0-9a-f]{6})$/i.exec(theme.bg)
+    const n = m ? parseInt(m[1], 16) : 0
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${theme.dark ? 0.78 : 0.72})`
+  }, [theme.bg, theme.dark])
+
   // ---------------------------------------------------------------- selection actions
   const addHighlight = (color: HighlightColor, note?: string, sel = selection) => {
     if (!sel) return
@@ -327,7 +399,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
   const stageInset = panel ? 'panel-open' : ''
 
   return (
-    <div className={`reader ${chrome ? 'chrome-on' : 'chrome-off'} ${theme.dark ? 'is-dark' : ''}`} style={{ background: theme.bg, color: theme.fg }}>
+    <div className={`reader ${chrome ? 'chrome-on' : 'chrome-off'} ${theme.dark ? 'is-dark' : ''} ${focusMode ? 'focus-mode' : ''} ${auto ? 'auto-on' : ''}`} style={{ background: theme.bg, color: theme.fg }}>
       {/* top bar */}
       <header className="reader-top drag-region">
         <div className="rt-left no-drag">
@@ -340,6 +412,12 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
           {reloc?.chapter && <div className="rt-chapter truncate">{reloc.chapter}</div>}
         </div>
         <div className="rt-right no-drag">
+          <IconButton label={auto ? t('auto.stop') : t('auto.start')} shortcut="S" active={auto} onClick={toggleAuto}>
+            {auto ? <PauseCircle size={20} /> : <PlayCircle size={20} />}
+          </IconButton>
+          <IconButton label={focusMode ? t('focus.off') : t('focus.title')} shortcut="F" active={focusMode} onClick={toggleFocus}>
+            <Eyeglasses size={20} />
+          </IconButton>
           <IconButton label={t('reader.notes')} active={panel === 'notes'} onClick={() => setPanel(p => (p === 'notes' ? null : 'notes'))}><Quotes size={19} /></IconButton>
           <IconButton label={bookmarked ? t('reader.removeBookmark') : t('reader.addBookmark')} shortcut="Ctrl B" active={bookmarked} onClick={toggleBookmark}>
             <BookmarkSimple size={19} weight={bookmarked ? 'fill' : 'regular'} />
@@ -352,7 +430,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
       </header>
 
       {/* stage */}
-      <div className={`reader-stage ${stageInset} ${pagedMode ? 'is-paged' : 'is-reflow'} flow-${reader.flow}`}>
+      <div ref={stageRef} className={`reader-stage ${stageInset} ${pagedMode ? 'is-paged' : 'is-reflow'} flow-${reader.flow}`}>
         {source?.kind === 'reflow' && (
           <ReflowEngine ref={ctrl} book={source.book} meta={{ ...source.meta, title: book.title }} prefs={reader}
             theme={theme} accent={accent} initialLocation={typeof book.location === 'string' ? book.location : null}
@@ -364,6 +442,11 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
             annotations={annotations} events={events} setPrefs={setPaged} />
         )}
         {!source && !error && <LoadingBook title={book.title} />}
+        {focusMode && autoPrefs.ruler && source && (
+          <FocusRuler stage={stageRef} height={rulerHeight} color={dimColor} accent={accent}
+            guided={auto && !continuous ? autoProgress : null}
+            onOverflow={dir => (dir > 0 ? ctrl.current?.next() : ctrl.current?.prev())} />
+        )}
         {appearance.warmth > 0 && <div className="warm-filter" style={{ opacity: appearance.warmth }} aria-hidden="true" />}
         {error && (
           <div className="reader-error rise-in">
@@ -381,6 +464,12 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
           </>
         )}
       </div>
+
+      {auto && source && (
+        <AutoReadBar continuous={continuous} prefs={autoPrefs} paused={autoPaused} manualPause={autoHold} progressRef={autoProgress}
+          focus={focusMode} onToggle={() => setAutoHold(h => !h)} onSpeed={changeSpeed}
+          onRuler={() => updateSettings(s => { s.autoRead.ruler = !s.autoRead.ruler })} onClose={() => setAuto(false)} />
+      )}
 
       {/* bottom bar */}
       <footer className="reader-bottom">

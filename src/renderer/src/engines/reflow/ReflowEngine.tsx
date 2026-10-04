@@ -365,6 +365,11 @@ export const ReflowEngine = forwardRef<EngineController, Props>(function ReflowE
   }, [annotations])
 
   useImperativeHandle(ref, (): EngineController => ({
+    scrollStep: px => {
+      const r = viewRef.current?.renderer
+      if (!r || !r.scrolled) return null
+      return r.scrollFree(px) ? 'moved' : 'edge'
+    },
     next: () => viewRef.current?.next(),
     prev: () => viewRef.current?.prev(),
     goTo: async target => { await viewRef.current?.goTo(target) },

@@ -418,6 +418,13 @@ export const PagedEngine = forwardRef<EngineController, Props>(function PagedEng
   }
 
   useImperativeHandle(ref, (): EngineController => ({
+    scrollStep: px => {
+      const el = scrollRef.current
+      if (mode !== 'scroll' || !el) return null
+      const before = el.scrollTop
+      el.scrollTop = before + px
+      return el.scrollTop !== before ? 'moved' : 'edge'
+    },
     next: () => step(1),
     prev: () => step(-1),
     goTo: async t => goToPage(typeof t === 'number' ? t : Number(t)),
@@ -459,7 +466,7 @@ export const PagedEngine = forwardRef<EngineController, Props>(function PagedEng
     bookmarkLocation: () => ({ page: pageRef.current, text: undefined }),
     isBookmarked: list => list.find(a => a.kind === 'bookmark' && a.page === pageRef.current) ?? null,
     focus: () => scrollRef.current?.focus(),
-  }), [step, goToPage, doc])
+  }), [step, goToPage, doc, mode])
 
   const hlFor = (i: number) => annotations.filter(a => a.page === i && a.kind !== 'bookmark')
   const searchFor = (i: number) => (search?.query ? { query: search.query, active: search.page === i } : null)

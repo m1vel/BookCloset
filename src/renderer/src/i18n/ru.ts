@@ -344,6 +344,27 @@ export const ru = {
   'quote.copied': 'Карточка скопирована — вставьте её в чат или пост',
   'quote.saved': 'Карточка сохранена',
   'quote.fileSuffix': 'цитата',
+
+  // auto-read & focus
+  'auto.title': 'Автопрокрутка',
+  'auto.start': 'Автопрокрутка',
+  'auto.stop': 'Остановить автопрокрутку',
+  'auto.pause': 'Пауза',
+  'auto.resume': 'Продолжить',
+  'auto.slower': 'Медленнее',
+  'auto.faster': 'Быстрее',
+  'auto.speed': '{n} пикс/с',
+  'auto.perPage': '{n} с/стр.',
+  'auto.ended': 'Конец книги — автопрокрутка остановлена',
+  'auto.settings': 'Автопрокрутка и фокус',
+  'auto.speedLabel': 'Скорость прокрутки',
+  'auto.pageLabel': 'Время на страницу',
+  'focus.title': 'Режим фокуса',
+  'focus.off': 'Выйти из режима фокуса',
+  'focus.on': 'Режим фокуса',
+  'focus.hint': 'Линейка следует за курсором, ↑/↓ — по строкам. F или Esc — выйти.',
+  'focus.ruler': 'Линейка чтения',
+  'focus.rulerLines': 'Высота линейки',
 }
 
 export type Dict = typeof ru
