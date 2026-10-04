@@ -22,6 +22,8 @@ const acceptNode = node => {
     if (node.nodeType === 1) {
         const name = node.tagName.toLowerCase()
         if (name === 'script' || name === 'style') return NodeFilter.FILTER_REJECT
+        // BookCloset: injected bilingual translations are not part of the book
+        if (node.hasAttribute('data-bc-tr')) return NodeFilter.FILTER_REJECT
         return NodeFilter.FILTER_SKIP
     }
     return NodeFilter.FILTER_ACCEPT

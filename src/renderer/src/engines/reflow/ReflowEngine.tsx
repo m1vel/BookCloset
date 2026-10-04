@@ -11,6 +11,7 @@ import '../../vendor/foliate-js/view.js'
 import { Overlayer } from '../../vendor/foliate-js/overlayer.js'
 import * as CFI from '../../vendor/foliate-js/epubcfi.js'
 import { sentencesIn, paintSpeech } from '../../speech/segment'
+import { applyBilingual, removeBilingual, type BilingualOptions } from './bilingual'
 import { detectLanguage } from '../../translation'
 
 interface Props {
@@ -23,6 +24,8 @@ interface Props {
   initialFraction?: number
   annotations: Annotation[]
   events: EngineEvents
+  /** bilingual mode: paragraph translations (null = off) */
+  bilingual?: Omit<BilingualOptions, 'accent'> | null
 }
 
 const EPUB_NS = 'http://www.idpf.org/2007/ops'
@@ -74,7 +77,7 @@ function extractNote(el: Element | null): string | null {
 }
 
 export const ReflowEngine = forwardRef<EngineController, Props>(function ReflowEngine(
-  { book, meta, prefs, theme, accent, initialLocation, initialFraction, annotations, events }, ref,
+  { book, meta, prefs, theme, accent, initialLocation, initialFraction, annotations, events, bilingual = null }, ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<any>(null)
@@ -93,6 +96,21 @@ export const ReflowEngine = forwardRef<EngineController, Props>(function ReflowE
   accentRef.current = accent
   /** visible range of the current page (read-aloud starts here) */
   const lastRange = useRef<Range | null>(null)
+  const bilingualRef = useRef(bilingual)
+  bilingualRef.current = bilingual
+  const biJobs = useRef(new Map<Document, AbortController>())
+  /** translate the paragraphs of a section document (bilingual mode) */
+  const startBilingual = (doc: Document) => {
+    biJobs.current.get(doc)?.abort()
+    const opts = bilingualRef.current
+    if (!opts) return
+    const ac = new AbortController()
+    biJobs.current.set(doc, ac)
+    const from = lastRange.current?.startContainer.ownerDocument === doc ? lastRange.current.startContainer : null
+    applyBilingual(doc, { ...opts, accent: accentRef.current }, ac.signal, p => eventsRef.current.onBilingual?.(p), from)
+      .catch(e => console.warn('bilingual failed', e))
+      .finally(() => { if (biJobs.current.get(doc) === ac) biJobs.current.delete(doc) })
+  }
   const metaRef = useRef(meta)
   metaRef.current = meta
 
@@ -181,6 +199,7 @@ export const ReflowEngine = forwardRef<EngineController, Props>(function ReflowE
       if (prefsRef.current.hyphenate && hyRef.current) {
         try { hyphenateDocument(doc, hyRef.current) } catch (err) { console.warn('hyphenation failed', err) }
       }
+      if (bilingualRef.current) startBilingual(doc)
       const frame = () => (doc.defaultView?.frameElement as HTMLElement | null)?.getBoundingClientRect() ?? new DOMRect()
       const toApp = (r: DOMRect) => {
         const f = frame()
@@ -350,6 +369,19 @@ export const ReflowEngine = forwardRef<EngineController, Props>(function ReflowE
   // re-style only when a reading preference actually changed (the settings object is cloned on every update)
   const styleKey = JSON.stringify(prefs)
   useEffect(() => { applyStyles(viewRef.current) }, [styleKey, theme, accent])
+
+  const bilingualKey = bilingual ? JSON.stringify(bilingual) : ''
+  useEffect(() => {
+    const docs: Document[] = viewRef.current?.renderer?.getContents?.().map((c: any) => c.doc).filter(Boolean) ?? []
+    for (const doc of docs) {
+      biJobs.current.get(doc)?.abort()
+      if (bilingualKey) startBilingual(doc)
+      else removeBilingual(doc)
+    }
+    if (!bilingualKey) eventsRef.current.onBilingual?.({ done: 0, total: 0 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bilingualKey])
+  useEffect(() => () => { for (const ac of biJobs.current.values()) ac.abort() }, [])
 
   // annotations diff
   useEffect(() => {

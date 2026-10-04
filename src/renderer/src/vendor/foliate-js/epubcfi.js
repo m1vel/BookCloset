@@ -302,15 +302,32 @@ const nodeToParts = (node, offset, filter) => {
         .filter(x => x.index !== -1)
 }
 
-export const fromRange = (range, filter) => {
-    const { startContainer, startOffset, endContainer, endOffset } = range
+// BookCloset: CFIs ignore elements injected into the book (bilingual translations), so
+// locations, bookmarks and highlights stay valid whether or not they are shown
+const bcFilter = node => node.nodeType === 1 && node.hasAttribute('data-bc-tr')
+    ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+
+// a boundary inside an injected element moves to the end of the original text before it
+const bcEscape = (node, offset) => {
+    const el = node.nodeType === 1 ? node : node.parentElement
+    const tr = el?.closest?.('[data-bc-tr]')
+    if (!tr) return [node, offset]
+    const walker = tr.ownerDocument.createTreeWalker(tr.ownerDocument.body ?? tr.ownerDocument, NodeFilter.SHOW_TEXT)
+    walker.currentNode = tr
+    const prev = walker.previousNode()
+    return prev ? [prev, prev.nodeValue.length] : [node, offset]
+}
+
+export const fromRange = (range, filter = bcFilter) => {
+    const [startContainer, startOffset] = bcEscape(range.startContainer, range.startOffset)
+    const [endContainer, endOffset] = bcEscape(range.endContainer, range.endOffset)
     const start = nodeToParts(startContainer, startOffset, filter)
     if (range.collapsed) return toString([start])
     const end = nodeToParts(endContainer, endOffset, filter)
     return buildRange([start], [end])
 }
 
-export const toRange = (doc, parts, filter) => {
+export const toRange = (doc, parts, filter = bcFilter) => {
     const startParts = collapse(parts)
     const endParts = collapse(parts, true)
 

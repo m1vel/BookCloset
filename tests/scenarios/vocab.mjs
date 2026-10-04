@@ -4,7 +4,7 @@ export default async ({ page, shot, wait }) => {
   await page.evaluate(() => window.__bc.settings.getState().update(s => {
     s.lang = 'ru'; s.uiTheme = 'paper'; s.schedule.mode = 'off'
     Object.assign(s.reader, { pageTheme: 'auto', flow: 'paginated', columns: 2, fontFamily: 'Literata' })
-    Object.assign(s.translation, { enabled: true, provider: 'free', targetLang: 'ru', autoWord: true })
+    Object.assign(s.translation, { enabled: true, provider: 'free', targetLang: 'ru', autoWord: true, bilingual: false })
   }))
   // start from an empty vocabulary
   await page.evaluate(async () => {

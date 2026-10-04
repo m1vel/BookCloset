@@ -2,7 +2,7 @@ import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, nativeThem
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { writeFile, copyFile } from 'node:fs/promises'
-import type { Annotation, BookRecord, Collection, MetaQuery, ReadingSession, VocabEntry, Settings, TranslateRequest, TranslationProviderId } from '../shared/types'
+import type { Annotation, BatchTranslateRequest, BookRecord, Collection, MetaQuery, ReadingSession, VocabEntry, Settings, TranslateRequest, TranslationProviderId } from '../shared/types'
 import { SUPPORTED_EXTENSIONS, extOf } from '../shared/formats'
 import { mergeSettings } from '../shared/defaults'
 import { setupDataDir, dataDir } from './paths'
@@ -18,6 +18,7 @@ import { extractDocText, findCalibre, convertWithCalibre } from './converters'
 import { translate } from './translate'
 import { setKey, keyStatus } from './secrets'
 import { searchMetadata, metadataDetails, fetchImage } from './metasearch'
+import { translateBatch, flushBilingualCache } from './bilingual'
 
 setupDataDir()
 registerSchemes()
@@ -208,6 +209,7 @@ function registerIpc() {
   })
 
   ipcMain.handle('translate:run', (_e, req: TranslateRequest) => translate(req))
+  ipcMain.handle('translate:batch', (_e, req: BatchTranslateRequest) => translateBatch(req))
   ipcMain.handle('translate:key-status', () => keyStatus())
   ipcMain.handle('translate:set-key', (_e, provider: TranslationProviderId, key: string) => { setKey(provider, key); return keyStatus() })
 
@@ -278,11 +280,13 @@ app.whenReady().then(() => {
 
 app.on('before-quit', () => {
   flushAll()
+  flushBilingualCache()
   settings?.flush()
 })
 
 app.on('window-all-closed', () => {
   flushAll()
+  flushBilingualCache()
   settings?.flush()
   app.quit()
 })

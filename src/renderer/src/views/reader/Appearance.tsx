@@ -7,8 +7,30 @@ import { Segmented, Slider, Toggle } from '../../components/ui'
 import { READING_FONTS } from '../../styles/fonts'
 import { PAGE_THEMES, resolvePageTheme } from '../../engines/page-themes'
 import { useAppearance, setPageTheme } from '../../store/appearance'
+import { TARGET_LANGS, langName } from '../../translation'
 
 const THEMES: PageTheme[] = ['auto', 'white', 'paper', 'sepia', 'gray', 'night', 'oled']
+
+/** Bilingual mode: paragraph translations under the original text. */
+function BilingualSection() {
+  const t = useT()
+  const ui = useSettings(s => s.settings.lang)
+  const tr = useSettings(s => s.settings.translation)
+  const update = useSettings(s => s.update)
+  return (
+    <section className="ap-sliders ap-auto">
+      <Toggle label={t('bi.title')} hint={t('bi.hint')} checked={tr.bilingual} onChange={v => update(s => { s.translation.bilingual = v })} />
+      {tr.bilingual && (
+        <div className="ap-row">
+          <span className="ap-label">{t('bi.lang')}</span>
+          <select className="input ap-select" value={tr.bilingualLang} onChange={e => update(s => { s.translation.bilingualLang = e.target.value })}>
+            {TARGET_LANGS.map(l => <option key={l} value={l}>{langName(l, ui)}</option>)}
+          </select>
+        </div>
+      )}
+    </section>
+  )
+}
 
 /** Autoscroll speed / page time and the focus ruler; shared by both appearance popovers. */
 function AutoReadSection({ continuous }: { continuous: boolean }) {
@@ -138,6 +160,7 @@ export function ReflowAppearance() {
         <Toggle label={t('type.override')} checked={r.overrideBookStyles} onChange={v => setReader({ overrideBookStyles: v })} />
         <Toggle label={t('type.animation')} checked={r.animated} onChange={v => setReader({ animated: v })} />
       </section>
+      <BilingualSection />
       <AutoReadSection continuous={r.flow === 'scrolled'} />
       <button className="btn ghost sm ap-reset" onClick={() => {
         const d = defaultSettings().reader

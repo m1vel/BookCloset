@@ -50,7 +50,9 @@ function splitLong(start: number, end: number, text: string): [number, number][]
 export function sentencesIn(root: Node, lang: string, from?: { node: Node; offset: number } | null): Sentence[] {
   const doc = root.ownerDocument ?? (root as Document)
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
-    acceptNode: n => (n.nodeType === 1 && SKIP.has((n as Element).tagName.toUpperCase()) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+    // bilingual translations ([data-bc-tr]) are not read aloud
+    acceptNode: n => (n.nodeType === 1 && (SKIP.has((n as Element).tagName.toUpperCase()) || (n as Element).hasAttribute('data-bc-tr'))
+      ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
   })
   let segmenter: Intl.Segmenter
   try { segmenter = new Intl.Segmenter(lang, { granularity: 'sentence' }) } catch { segmenter = new Intl.Segmenter('en', { granularity: 'sentence' }) }

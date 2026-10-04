@@ -198,6 +198,10 @@ export interface ThemeSchedule {
 export interface TranslationSettings {
   /** show the "Translate" action in the selection menu */
   enabled: boolean
+  /** bilingual reading: paragraph translations under the original */
+  bilingual: boolean
+  /** target language for bilingual mode */
+  bilingualLang: string
   provider: TranslationProviderId
   /** ISO 639-1 code */
   targetLang: string
@@ -246,6 +250,20 @@ export type TranslateResponse =
   | { ok: false; code: TranslateErrorCode; message: string }
 
 export type KeyStatus = Partial<Record<TranslationProviderId, { set: boolean; hint: string }>>
+
+export interface BatchTranslateRequest {
+  texts: string[]
+  to: string
+  provider: TranslationProviderId
+  model?: string
+  folderId?: string
+}
+
+export interface BatchTranslateResponse {
+  /** null where a paragraph was not translated (empty, or an error stopped the batch) */
+  results: (string | null)[]
+  error?: { code: TranslateErrorCode; message: string }
+}
 
 export interface MetaQuery {
   title: string
