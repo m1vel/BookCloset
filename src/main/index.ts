@@ -2,7 +2,7 @@ import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, nativeThem
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { writeFile, copyFile } from 'node:fs/promises'
-import type { Annotation, BatchTranslateRequest, BookRecord, Collection, MetaQuery, ReadingSession, VocabEntry, Settings, TranslateRequest, TranslationProviderId } from '../shared/types'
+import type { Annotation, AssistantRequest, BatchTranslateRequest, BookRecord, Collection, MetaQuery, ReadingSession, VocabEntry, Settings, TranslateRequest, TranslationProviderId } from '../shared/types'
 import { SUPPORTED_EXTENSIONS, extOf } from '../shared/formats'
 import { mergeSettings } from '../shared/defaults'
 import { setupDataDir, dataDir } from './paths'
@@ -19,6 +19,7 @@ import { translate } from './translate'
 import { setKey, keyStatus } from './secrets'
 import { searchMetadata, metadataDetails, fetchImage } from './metasearch'
 import { translateBatch, flushBilingualCache } from './bilingual'
+import { askAssistant, cancelAssistant, assistantAvailable } from './assistant'
 
 setupDataDir()
 registerSchemes()
@@ -210,6 +211,9 @@ function registerIpc() {
 
   ipcMain.handle('translate:run', (_e, req: TranslateRequest) => translate(req))
   ipcMain.handle('translate:batch', (_e, req: BatchTranslateRequest) => translateBatch(req))
+  ipcMain.handle('assistant:ask', (e, req: AssistantRequest) => askAssistant(req, e.sender, testMode))
+  ipcMain.handle('assistant:cancel', (_e, id: string) => cancelAssistant(id))
+  ipcMain.handle('assistant:available', () => assistantAvailable())
   ipcMain.handle('translate:key-status', () => keyStatus())
   ipcMain.handle('translate:set-key', (_e, provider: TranslationProviderId, key: string) => { setKey(provider, key); return keyStatus() })
 

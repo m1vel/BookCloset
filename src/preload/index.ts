@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
-  Annotation, ArchiveListing, BatchTranslateRequest, BatchTranslateResponse, BookRecord, Collection, ImportResult, KeyStatus, LibraryData, ReadingSession,
+  Annotation, ArchiveListing, AssistantRequest, AssistantResponse, BatchTranslateRequest, BatchTranslateResponse, BookRecord, Collection, ImportResult, KeyStatus, LibraryData, ReadingSession,
   MetaCandidate, MetaQuery, Settings, StatsData, TranslateRequest, VocabEntry, TranslateResponse, TranslationProviderId,
 } from '../shared/types'
 
@@ -55,6 +55,16 @@ const api = {
     search: (q: MetaQuery) => invoke<MetaCandidate[]>('meta:search', q),
     details: (key: string) => invoke<{ description?: string; subjects?: string[] }>('meta:details', key),
     image: (url: string) => invoke<Uint8Array | null>('meta:image', url),
+  },
+  assistant: {
+    ask: (req: AssistantRequest) => invoke<AssistantResponse>('assistant:ask', req),
+    cancel: (id: string) => invoke<void>('assistant:cancel', id),
+    available: () => invoke<{ claude: boolean; openai: boolean }>('assistant:available'),
+    onDelta: (cb: (d: { id: string; text: string }) => void) => {
+      const fn = (_e: unknown, d: { id: string; text: string }) => cb(d)
+      ipcRenderer.on('assistant:delta', fn)
+      return () => { ipcRenderer.removeListener('assistant:delta', fn) }
+    },
   },
   vocab: {
     get: () => invoke<VocabEntry[]>('vocab:get'),

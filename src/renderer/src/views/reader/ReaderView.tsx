@@ -26,6 +26,7 @@ import { openBookById } from '../open'
 import { langName } from '../../translation'
 import { useAutoRead, AutoReadBar, FocusRuler, stepValue, SPEED_STEPS, PAGE_STEPS } from './AutoRead'
 import { useReadAloud, ReadAloudBar } from './ReadAloud'
+import type { AiRequest } from './Assistant'
 
 const uid = () => Math.random().toString(36).slice(2, 11)
 
@@ -65,6 +66,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
   translationRef.current = translation
   const trSettings = useSettings(s => s.settings.translation)
   const [biProgress, setBiProgress] = useState<{ done: number; total: number } | null>(null)
+  const [aiRequest, setAiRequest] = useState<AiRequest | null>(null)
   const [search, setSearch] = useState<SearchState>({ query: '', hits: [], progress: 0, running: false })
   const [searchNonce, setSearchNonce] = useState(0)
   const [scrub, setScrub] = useState<number | null>(null)
@@ -208,6 +210,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
     if (e.code === 'KeyS' && !e.shiftKey) { e.preventDefault(); toggleAuto(); return }
     if (e.code === 'KeyR' && !e.shiftKey) { e.preventDefault(); toggleReadAloud(); return }
     if (e.code === 'KeyB' && !e.shiftKey && source?.kind === 'reflow') { e.preventDefault(); toggleBilingual(); return }
+    if (e.code === 'KeyA' && !e.shiftKey) { e.preventDefault(); setPanel(p => (p === 'ai' ? null : 'ai')); return }
     const reading = raRef.current
     if (reading && reading.status !== 'idle' && k === ' ') { e.preventDefault(); reading.toggle(); return }
     if (e.code === 'KeyF' && !e.shiftKey) { e.preventDefault(); toggleFocus(); return }
@@ -544,7 +547,9 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
           onNavigate={target => { ctrl.current?.goTo(target); ra.followNavigation(); if (window.innerWidth < 1100) setPanel(null) }}
           onDelete={id => saveAnnotations(annotations.filter(a => a.id !== id))}
           onEditNote={a => setNoteEdit({ rect: new DOMRect(window.innerWidth / 2, window.innerHeight / 2, 0, 0), quote: a.text, initial: a.note, id: a.id })}
-          onExport={exportNotes} search={search} setSearch={setSearch} paged={pagedMode} searchNonce={searchNonce} />
+          onExport={exportNotes} search={search} setSearch={setSearch} paged={pagedMode} searchNonce={searchNonce}
+          book={{ id: book.id, title: book.title, authors: book.authors }} progress={reloc?.fraction ?? book.progress} aiRequest={aiRequest}
+          onOpenSettings={() => navigate({ name: 'settings' })} />
       )}
 
       <Popover anchor={appearanceEl} open={!!appearanceEl} onClose={() => setAppearanceEl(null)} placement="bottom-end" className="appearance-pop">
@@ -552,7 +557,7 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
       </Popover>
 
       {selection && !noteEdit && !translation && (
-        <SelectionMenu rect={selection.rect}
+        <SelectionMenu rect={selection.rect} text={selection.text}
           onHighlight={c => addHighlight(c)}
           onNote={() => setNoteEdit({ rect: selection.rect, quote: selection.text, sel: selection })}
           onCopy={() => { copy(selection.text); ctrl.current?.clearSelection(); setSelection(null) }}
@@ -565,6 +570,12 @@ export default function ReaderView({ bookId, target }: { bookId: string; target?
           }}
           onTranslate={trSettings.enabled ? () => openTranslation(selection) : undefined}
           onReadFrom={() => { setAuto(false); ra.start(); setSelection(null) }}
+          onAsk={task => {
+            setAiRequest({ task, selection: selection.text.replace(/\s+/g, ' ').trim(), nonce: Date.now() })
+            setPanel('ai')
+            ctrl.current?.clearSelection()
+            setSelection(null)
+          }}
           onQuoteCard={() => {
             useUi.getState().showQuoteCard({ bookId, text: selection.text, chapter: selection.chapter ?? relocRef.current?.chapter })
             ctrl.current?.clearSelection()

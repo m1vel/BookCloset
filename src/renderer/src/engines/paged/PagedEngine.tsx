@@ -4,6 +4,7 @@ import type { PagedDocument, TocItem } from '../../formats/types'
 import type { EngineController, EngineEvents, SearchHit } from '../types'
 import { sentencesIn, paintSpeech } from '../../speech/segment'
 import { detectLanguage } from '../../translation'
+import { tail } from '../plain-text'
 import { HIGHLIGHT_COLORS } from '../types'
 import type { PageThemeDef } from '../page-themes'
 
@@ -420,6 +421,19 @@ export const PagedEngine = forwardRef<EngineController, Props>(function PagedEng
   }
 
   useImperativeHandle(ref, (): EngineController => ({
+    async readSoFar(max) {
+      if (!doc.hasText || !doc.getText) return { text: '', trimmed: false }
+      // everything up to the last page on screen
+      const last = mode === 'scroll' ? pageRef.current : Math.max(...(slides[slideIndex] ?? [pageRef.current]))
+      const parts: string[] = []
+      let total = 0
+      for (let i = last; i >= 0 && total < max; i--) {
+        const t = (await doc.getText(i).catch(() => '')).replace(/[ \t]+/g, ' ').trim()
+        parts.unshift(t)
+        total += t.length
+      }
+      return tail(parts, max)
+    },
     async speech(where) {
       if (!doc.hasText) return null
       let p = pageRef.current

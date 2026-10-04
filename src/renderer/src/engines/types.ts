@@ -89,6 +89,11 @@ export interface EngineController {
    * null when there is nothing (more) to read.
    */
   speech(where: 'start' | 'next'): Promise<SpeechCursor | null>
+  /**
+   * Book text from the beginning up to the end of the current page (the AI assistant's spoiler
+   * boundary), keeping the most recent `max` characters.
+   */
+  readSoFar(max: number): Promise<{ text: string; trimmed: boolean }>
 }
 
 export const HIGHLIGHT_COLORS: Record<HighlightColor, string> = {

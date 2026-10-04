@@ -12,6 +12,7 @@ import { Overlayer } from '../../vendor/foliate-js/overlayer.js'
 import * as CFI from '../../vendor/foliate-js/epubcfi.js'
 import { sentencesIn, paintSpeech } from '../../speech/segment'
 import { applyBilingual, removeBilingual, type BilingualOptions } from './bilingual'
+import { plainText, tail } from '../plain-text'
 import { detectLanguage } from '../../translation'
 
 interface Props {
@@ -404,6 +405,31 @@ export const ReflowEngine = forwardRef<EngineController, Props>(function ReflowE
   }, [annotations])
 
   useImperativeHandle(ref, (): EngineController => ({
+    async readSoFar(max) {
+      const view = viewRef.current
+      const c = view?.renderer.getContents()[0]
+      if (!c?.doc?.body) return { text: '', trimmed: false }
+      const doc: Document = c.doc
+      // the current section up to the end of the visible page
+      const upto = doc.createRange()
+      upto.setStart(doc.body, 0)
+      const vis = lastRange.current
+      if (vis && vis.endContainer.ownerDocument === doc) upto.setEnd(vis.endContainer, vis.endOffset)
+      else upto.setEnd(doc.body, doc.body.childNodes.length)
+      const parts = [plainText(upto.cloneContents())]
+      let total = parts[0].length
+      for (let i = c.index - 1; i >= 0 && total < max; i--) {
+        const sec = view.book.sections[i]
+        if (!sec?.createDocument || sec.linear === 'no') continue
+        try {
+          const d: Document = await sec.createDocument()
+          const t = plainText(d.body ?? d.documentElement)
+          parts.unshift(t)
+          total += t.length
+        } catch { /* unreadable section */ }
+      }
+      return tail(parts, max)
+    },
     async speech(where) {
       const view = viewRef.current
       if (!view) return null

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ListBullets, Quotes, BookmarkSimple, MagnifyingGlass, CaretRight, Trash, X, Export, PencilSimple, NotePencil,
+  ListBullets, Quotes, BookmarkSimple, MagnifyingGlass, CaretRight, Trash, X, Export, PencilSimple, NotePencil, Sparkle,
 } from '@phosphor-icons/react'
+import { AssistantPanel, type AiRequest } from './Assistant'
 import type { Annotation } from '../../../../shared/types'
 import type { TocItem } from '../../formats/types'
 import type { EngineController, SearchHit } from '../../engines/types'
@@ -10,7 +11,7 @@ import { useT, formatDate } from '../../i18n'
 import { useSettings } from '../../store/settings'
 import { IconButton } from '../../components/ui'
 
-export type PanelTab = 'toc' | 'notes' | 'bookmarks' | 'search'
+export type PanelTab = 'toc' | 'notes' | 'bookmarks' | 'search' | 'ai'
 
 interface Props {
   tab: PanelTab
@@ -29,6 +30,10 @@ interface Props {
   paged: boolean
   /** bump to run the search for `search.query` right away */
   searchNonce: number
+  book: { id: string; title: string; authors: string[] }
+  progress: number
+  aiRequest: AiRequest | null
+  onOpenSettings: () => void
 }
 
 export interface SearchState {
@@ -124,6 +129,7 @@ export function ReaderPanel(p: Props) {
     { id: 'notes', icon: <Quotes size={17} />, label: t('reader.notes'), count: notes.length },
     { id: 'bookmarks', icon: <BookmarkSimple size={17} />, label: t('reader.bookmarks'), count: bookmarks.length },
     { id: 'search', icon: <MagnifyingGlass size={17} />, label: t('reader.search') },
+    { id: 'ai', icon: <Sparkle size={17} />, label: t('ai.title') },
   ]
 
   return (
@@ -142,7 +148,11 @@ export function ReaderPanel(p: Props) {
       </div>
       <h3 className="rp-title display">{tabs.find(x => x.id === p.tab)?.label}</h3>
 
-      <div className="rp-body">
+      {/* kept mounted so a conversation survives switching tabs */}
+      <div className="rp-body rp-ai" hidden={p.tab !== 'ai'}>
+        <AssistantPanel controller={p.controller} book={p.book} progress={p.progress} request={p.aiRequest} onOpenSettings={p.onOpenSettings} />
+      </div>
+      <div className="rp-body" hidden={p.tab === 'ai'}>
         {p.tab === 'toc' && (p.toc.length
           ? <TocTree items={p.toc} current={p.currentChapter} onNavigate={p.onNavigate} />
           : <div className="rp-empty">{t('reader.noToc')}</div>)}
